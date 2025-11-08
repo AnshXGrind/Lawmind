@@ -32,6 +32,19 @@ Existing AI tools are too generic, lacking:
 
 ---
 
+## 🚀 Live Demo & Deployment
+
+### Quick Deploy
+
+**Ready to deploy in production?**
+
+[![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/AnshXGrind/Lawmind)
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/AnshXGrind/Lawmind)
+
+**See:** 📚 [Complete Deployment Guide](DEPLOYMENT_GUIDE.md) | ✅ [Quick Checklist](DEPLOY_CHECKLIST.md)
+
+---
+
 ## ✨ Features
 
 ### 🎯 Core Features
