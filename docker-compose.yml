@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lawmind-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://lawmind:lawmind123@db:5432/lawmind_db
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SECRET_KEY=${SECRET_KEY}
+    volumes:
+      - ./backend:/app
+      - backend-uploads:/app/uploads
+      - backend-exports:/app/exports
+      - backend-vectordb:/app/data/vectordb
+    depends_on:
+      - db
+    networks:
+      - lawmind-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: lawmind-frontend
+    ports:
+      - "3000:80"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000/api
+    depends_on:
+      - backend
+    networks:
+      - lawmind-network
+
+  db:
+    image: postgres:15-alpine
+    container_name: lawmind-db
+    environment:
+      - POSTGRES_DB=lawmind_db
+      - POSTGRES_USER=lawmind
+      - POSTGRES_PASSWORD=lawmind123
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - lawmind-network
+
+volumes:
+  postgres-data:
+  backend-uploads:
+  backend-exports:
+  backend-vectordb:
+
+networks:
+  lawmind-network:
+    driver: bridge
