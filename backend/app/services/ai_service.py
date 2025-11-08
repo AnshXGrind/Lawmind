@@ -13,7 +13,7 @@ class LegalDraftingAI:
         """Initialize LLM and prompt templates"""
         # Lazy import to avoid loading heavy dependencies on startup
         from langchain_openai import ChatOpenAI
-        from langchain.prompts import ChatPromptTemplate
+        from langchain_core.prompts import ChatPromptTemplate
         
         self.llm = ChatOpenAI(
             model=settings.LLM_MODEL,
@@ -26,7 +26,7 @@ class LegalDraftingAI:
     
     def _create_draft_template(self):
         """Create prompt template for legal drafting"""
-        from langchain.prompts import ChatPromptTemplate
+        from langchain_core.prompts import ChatPromptTemplate
         
         system_message = """You are LawMind, a professional Indian legal drafting assistant with expertise in Indian law.
 You generate legally formatted documents that follow proper court procedures and formatting standards.
@@ -80,11 +80,8 @@ Ensure the language is {tone}, legally precise, and follows court formatting con
         # Format sections
         sections_text = ", ".join(request.sections) if request.sections else "To be determined"
         
-        # Create chain
-        chain = LLMChain(llm=self.llm, prompt=self.draft_template)
-        
-        # Generate draft
-        result = chain.run(
+        # Generate draft using the template
+        messages = self.draft_template.format_messages(
             document_type=request.document_type.value,
             case_type=request.case_type.value,
             court=request.court.value.replace("_", " ").title(),
@@ -97,68 +94,56 @@ Ensure the language is {tone}, legally precise, and follows court formatting con
             additional_context=request.additional_context or "None provided"
         )
         
-        return result
+        result = self.llm.invoke(messages)
+        return result.content
     
     def explain_section(self, text: str) -> str:
         """Explain a specific section of legal text"""
-        prompt = PromptTemplate(
-            input_variables=["text"],
-            template="""As a legal expert, explain the following legal text in simple, clear language:
+        prompt_text = f"""As a legal expert, explain the following legal text in simple, clear language:
 
 Text: {text}
 
 Provide a concise explanation that a non-lawyer could understand, while maintaining legal accuracy."""
-        )
         
-        chain = LLMChain(llm=self.llm, prompt=prompt)
-        return chain.run(text=text)
+        result = self.llm.invoke(prompt_text)
+        return result.content
     
     def simplify_tone(self, text: str) -> str:
         """Simplify legal text while maintaining meaning"""
-        prompt = PromptTemplate(
-            input_variables=["text"],
-            template="""Rewrite the following legal text in simpler, more accessible language while maintaining legal accuracy:
+        prompt_text = f"""Rewrite the following legal text in simpler, more accessible language while maintaining legal accuracy:
 
 Original: {text}
 
 Simplified version:"""
-        )
         
-        chain = LLMChain(llm=self.llm, prompt=prompt)
-        return chain.run(text=text)
+        result = self.llm.invoke(prompt_text)
+        return result.content
     
     def rephrase_legally(self, text: str, context: str = "") -> str:
         """Rephrase text in more formal legal language"""
-        prompt = PromptTemplate(
-            input_variables=["text", "context"],
-            template="""Rephrase the following text in formal, professional legal language suitable for court documents:
+        prompt_text = f"""Rephrase the following text in formal, professional legal language suitable for court documents:
 
 Text: {text}
 Context: {context}
 
 Legally rephrased version:"""
-        )
         
-        chain = LLMChain(llm=self.llm, prompt=prompt)
-        return chain.run(text=text, context=context)
+        result = self.llm.invoke(prompt_text)
+        return result.content
     
     def suggest_improvements(self, draft: str) -> List[str]:
         """Suggest improvements for a legal draft"""
-        prompt = PromptTemplate(
-            input_variables=["draft"],
-            template="""Review the following legal draft and suggest 3-5 specific improvements:
+        prompt_text = f"""Review the following legal draft and suggest 3-5 specific improvements:
 
 Draft:
 {draft}
 
 Provide numbered suggestions for improvement:"""
-        )
         
-        chain = LLMChain(llm=self.llm, prompt=prompt)
-        result = chain.run(draft=draft)
+        result = self.llm.invoke(prompt_text)
         
         # Parse suggestions (assuming they're numbered)
-        suggestions = [s.strip() for s in result.split("\n") if s.strip() and s.strip()[0].isdigit()]
+        suggestions = [s.strip() for s in result.content.split("\n") if s.strip() and s.strip()[0].isdigit()]
         return suggestions
     
     def suggest_legal_sections(self, document_type: str, case_type: str, facts: str = "") -> List[Dict[str, str]]:
