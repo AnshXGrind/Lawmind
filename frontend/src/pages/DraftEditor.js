@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, Download, Lightbulb, FileText, BookOpen } from 'lucide-react';
+import { Save, Download, Lightbulb, BookOpen } from 'lucide-react';
 import api from '../utils/api';
+import QualityScoreDashboard from '../components/QualityScoreDashboard';
 
 const DraftEditor = () => {
   const { id } = useParams();
@@ -11,15 +12,11 @@ const DraftEditor = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selectedText, setSelectedText] = useState('');
-  const [showAiPanel, setShowAiPanel] = useState(false);
   const [aiResult, setAiResult] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
+  const [showQuality, setShowQuality] = useState(true);
 
-  useEffect(() => {
-    fetchDraft();
-  }, [id]);
-
-  const fetchDraft = async () => {
+  const fetchDraft = useCallback(async () => {
     try {
       const response = await api.get(`/drafts/${id}`);
       setDraft(response.data);
@@ -31,7 +28,13 @@ const DraftEditor = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, navigate]);
+
+  useEffect(() => {
+    fetchDraft();
+  }, [fetchDraft]);
+
+
 
   const handleSave = async () => {
     setSaving(true);
@@ -50,7 +53,7 @@ const DraftEditor = () => {
 
   const handleExport = async (format) => {
     try {
-      const response = await api.post('/documents/export', {
+      await api.post('/documents/export', {
         draft_id: parseInt(id),
         format: format,
         include_watermark: true
@@ -79,7 +82,7 @@ const DraftEditor = () => {
         setAiResult(response.data.result);
       }
       
-      setShowAiPanel(true);
+      setShowQuality(false); // Switch to AI Assistant tab
     } catch (err) {
       alert('AI action failed');
     } finally {
@@ -91,7 +94,7 @@ const DraftEditor = () => {
     const selection = window.getSelection().toString();
     if (selection) {
       setSelectedText(selection);
-      setShowAiPanel(true);
+      setShowQuality(false); // Switch to AI Assistant tab
     }
   };
 
@@ -162,6 +165,31 @@ const DraftEditor = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Tab Selector */}
+        <div className="mb-4 flex space-x-2">
+          <button
+            onClick={() => setShowQuality(false)}
+            className={`px-4 py-2 rounded-lg font-medium transition ${
+              !showQuality
+                ? 'bg-purple-600 text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Lightbulb className="w-4 h-4 inline mr-2" />
+            AI Assistant
+          </button>
+          <button
+            onClick={() => setShowQuality(true)}
+            className={`px-4 py-2 rounded-lg font-medium transition ${
+              showQuality
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            📊 Quality Score
+          </button>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Editor */}
           <div className="lg:col-span-2">
@@ -176,9 +204,12 @@ const DraftEditor = () => {
             </div>
           </div>
 
-          {/* AI Assistant Panel */}
+          {/* Right Sidebar - Quality Score or AI Assistant */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-6 sticky top-24">
+            {showQuality ? (
+              <QualityScoreDashboard draftId={id} />
+            ) : (
+              <div className="bg-white rounded-lg shadow-md p-6 sticky top-24">
               <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center space-x-2">
                 <Lightbulb className="w-5 h-5 text-yellow-500" />
                 <span>AI Assistant</span>
@@ -257,7 +288,8 @@ const DraftEditor = () => {
                   </div>
                 </div>
               )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

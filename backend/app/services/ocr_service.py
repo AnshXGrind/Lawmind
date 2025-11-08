@@ -12,10 +12,13 @@ from PIL import Image
 import pdf2image
 from io import BytesIO
 
+# Make EasyOCR completely optional
+EASYOCR_AVAILABLE = False
 try:
     import easyocr
     EASYOCR_AVAILABLE = True
-except ImportError:
+except (ImportError, Exception) as e:
+    print(f"[!] EasyOCR not available (using Tesseract only): {e}")
     EASYOCR_AVAILABLE = False
 
 

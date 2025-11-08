@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Plus, Calendar, Trash2, TrendingUp, Clock, Award, Sparkles } from 'lucide-react';
+import { FileText, Plus, Calendar, Trash2, TrendingUp, Clock, Award, Sparkles, Upload } from 'lucide-react';
 import api from '../utils/api';
 
 const Dashboard = () => {
@@ -65,13 +65,22 @@ const Dashboard = () => {
               </h1>
               <p className="text-blue-200 text-lg">Manage and create professional legal documents</p>
             </div>
-            <button
-              onClick={() => navigate('/draft/new')}
-              className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition duration-200 font-semibold"
-            >
-              <Plus className="w-5 h-5" />
-              <span>Create New Draft</span>
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => navigate('/upload')}
+                className="flex items-center space-x-2 px-5 py-3 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition duration-200 font-semibold"
+              >
+                <Upload className="w-5 h-5" />
+                <span>OCR Upload</span>
+              </button>
+              <button
+                onClick={() => navigate('/draft/new')}
+                className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition duration-200 font-semibold"
+              >
+                <Plus className="w-5 h-5" />
+                <span>Create New Draft</span>
+              </button>
+            </div>
           </div>
 
           {/* Stats Cards */}

@@ -9,6 +9,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import DraftEditor from './pages/DraftEditor';
 import NewDraft from './pages/NewDraft';
+import UploadDocument from './pages/UploadDocument';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -76,6 +77,14 @@ function App() {
             element={
               isAuthenticated ? 
               <NewDraft /> : 
+              <Navigate to="/login" />
+            } 
+          />
+          <Route 
+            path="/upload" 
+            element={
+              isAuthenticated ? 
+              <UploadDocument /> : 
               <Navigate to="/login" />
             } 
           />

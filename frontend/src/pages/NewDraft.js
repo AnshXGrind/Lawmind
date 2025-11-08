@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Mic, MicOff, Sparkles, BookOpen, Plus, X } from 'lucide-react';
 import api from '../utils/api';
+import ValidationModal from '../components/ValidationModal';
 
 const NewDraft = () => {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ const NewDraft = () => {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [selectedSections, setSelectedSections] = useState([]);
   const suggestionsRef = useRef(null);
+  const [showValidation, setShowValidation] = useState(false);
 
   const [formData, setFormData] = useState({
     document_type: 'petition',
@@ -91,8 +93,15 @@ const NewDraft = () => {
     alert('Voice input feature coming soon!');
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e, skipValidation = false) => {
     e.preventDefault();
+    
+    // Show validation modal first (unless skipped)
+    if (!skipValidation) {
+      setShowValidation(true);
+      return;
+    }
+
     setError('');
     setLoading(true);
 
@@ -128,6 +137,15 @@ const NewDraft = () => {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleValidationComplete = (proceed) => {
+    setShowValidation(false);
+    if (proceed) {
+      // Create a synthetic event to pass to handleSubmit
+      const syntheticEvent = { preventDefault: () => {} };
+      handleSubmit(syntheticEvent, true);
     }
   };
 
@@ -483,6 +501,14 @@ const NewDraft = () => {
               </button>
             </div>
           </form>
+
+          {/* Validation Modal */}
+          <ValidationModal
+            isOpen={showValidation}
+            onClose={() => setShowValidation(false)}
+            formData={formData}
+            onValidationComplete={handleValidationComplete}
+          />
         </div>
       </div>
     </div>
