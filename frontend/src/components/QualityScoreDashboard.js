@@ -25,7 +25,15 @@ function QualityScoreDashboard({ draftId }) {
 
         setQualityData(response.data);
       } catch (err) {
-        setError(err.response?.data?.detail || 'Failed to fetch quality score');
+        // Handle error - detail can be string or array of validation errors
+        const errorDetail = err.response?.data?.detail;
+        if (Array.isArray(errorDetail)) {
+          setError(errorDetail.map(e => e.msg).join(', '));
+        } else if (typeof errorDetail === 'string') {
+          setError(errorDetail);
+        } else {
+          setError('Failed to fetch quality score');
+        }
       } finally {
         setLoading(false);
       }
@@ -52,7 +60,15 @@ function QualityScoreDashboard({ draftId }) {
 
       setQualityData(response.data);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to fetch quality score');
+      // Handle error - detail can be string or array of validation errors
+      const errorDetail = err.response?.data?.detail;
+      if (Array.isArray(errorDetail)) {
+        setError(errorDetail.map(e => e.msg).join(', '));
+      } else if (typeof errorDetail === 'string') {
+        setError(errorDetail);
+      } else {
+        setError('Failed to fetch quality score');
+      }
     } finally {
       setLoading(false);
     }

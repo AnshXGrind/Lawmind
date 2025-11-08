@@ -28,7 +28,15 @@ function ValidationModal({ isOpen, onClose, formData, onValidationComplete }) {
 
         setValidationResult(response.data);
       } catch (err) {
-        setError(err.response?.data?.detail || 'Validation failed');
+        // Handle error - detail can be string or array of validation errors
+        const errorDetail = err.response?.data?.detail;
+        if (Array.isArray(errorDetail)) {
+          setError(errorDetail.map(e => e.msg).join(', '));
+        } else if (typeof errorDetail === 'string') {
+          setError(errorDetail);
+        } else {
+          setError('Validation failed');
+        }
       } finally {
         setLoading(false);
       }
