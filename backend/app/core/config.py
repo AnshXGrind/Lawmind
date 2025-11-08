@@ -5,6 +5,7 @@ Configuration settings for LawMind Backend
 from pydantic_settings import BaseSettings
 from typing import List
 import os
+import json
 from pathlib import Path
 
 class Settings(BaseSettings):
@@ -26,11 +27,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./lawmind.db"
     
     # CORS
-    CORS_ORIGINS: List[str] = [
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:3000"
-    ]
+    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000"]
     
     # AI/LLM Settings
     OPENAI_API_KEY: str = ""
