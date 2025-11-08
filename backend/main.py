@@ -15,11 +15,11 @@ from app.core.database import init_db
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initialize services on startup"""
-    print("🧠 LawMind Backend Starting...")
+    print("[*] LawMind Backend Starting...")
     await init_db()
-    print("✅ Database initialized")
+    print("[+] Database initialized")
     yield
-    print("🛑 LawMind Backend Shutting Down...")
+    print("[-] LawMind Backend Shutting Down...")
 
 app = FastAPI(
     title="LawMind API",
