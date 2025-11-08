@@ -202,3 +202,31 @@ async def delete_draft(
     db.commit()
     
     return None
+
+@router.post("/suggest-sections")
+async def suggest_sections(
+    document_type: str,
+    case_type: str,
+    facts: str = "",
+    current_user: User = Depends(get_current_user)
+):
+    """Get AI-powered suggestions for applicable legal sections"""
+    
+    try:
+        suggestions = legal_ai.suggest_legal_sections(
+            document_type=document_type,
+            case_type=case_type,
+            facts=facts
+        )
+        
+        return {
+            "suggestions": suggestions,
+            "case_type": case_type,
+            "document_type": document_type
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating suggestions: {str(e)}"
+        )

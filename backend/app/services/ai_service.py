@@ -160,6 +160,98 @@ Provide numbered suggestions for improvement:"""
         # Parse suggestions (assuming they're numbered)
         suggestions = [s.strip() for s in result.split("\n") if s.strip() and s.strip()[0].isdigit()]
         return suggestions
+    
+    def suggest_legal_sections(self, document_type: str, case_type: str, facts: str = "") -> List[Dict[str, str]]:
+        """Suggest applicable legal sections based on case details"""
+        
+        # Predefined section database for common cases
+        section_database = {
+            "civil": {
+                "petition": [
+                    {"section": "Order VII Rule 11 CPC", "description": "Rejection of plaint", "act": "Code of Civil Procedure, 1908"},
+                    {"section": "Section 9 CPC", "description": "Courts to try all civil suits", "act": "Code of Civil Procedure, 1908"},
+                    {"section": "Order I Rule 10 CPC", "description": "Procedure where one of several plaintiffs fails to appear", "act": "Code of Civil Procedure, 1908"},
+                    {"section": "Section 141 CPC", "description": "Arrest and detention", "act": "Code of Civil Procedure, 1908"},
+                ],
+                "contract": [
+                    {"section": "Section 10 Contract Act", "description": "What agreements are contracts", "act": "Indian Contract Act, 1872"},
+                    {"section": "Section 73 Contract Act", "description": "Compensation for loss or damage caused by breach", "act": "Indian Contract Act, 1872"},
+                    {"section": "Section 75 Contract Act", "description": "Party rightfully rescinding contract, entitled to compensation", "act": "Indian Contract Act, 1872"},
+                ],
+                "property": [
+                    {"section": "Section 54 Transfer of Property Act", "description": "Sale defined", "act": "Transfer of Property Act, 1882"},
+                    {"section": "Section 17 Registration Act", "description": "Documents of which registration is compulsory", "act": "Registration Act, 1908"},
+                    {"section": "Section 53A Transfer of Property Act", "description": "Part performance", "act": "Transfer of Property Act, 1882"},
+                ]
+            },
+            "criminal": {
+                "petition": [
+                    {"section": "Section 438 CrPC", "description": "Direction for grant of bail (Anticipatory Bail)", "act": "Code of Criminal Procedure, 1973"},
+                    {"section": "Section 482 CrPC", "description": "Saving of inherent powers of High Court", "act": "Code of Criminal Procedure, 1973"},
+                    {"section": "Section 154 CrPC", "description": "Information in cognizable cases (FIR)", "act": "Code of Criminal Procedure, 1973"},
+                ],
+                "bail": [
+                    {"section": "Section 437 CrPC", "description": "When bail may be taken in case of non-bailable offence", "act": "Code of Criminal Procedure, 1973"},
+                    {"section": "Section 439 CrPC", "description": "Special powers of High Court or Court of Session regarding bail", "act": "Code of Criminal Procedure, 1973"},
+                ],
+                "appeal": [
+                    {"section": "Section 374 CrPC", "description": "Appeals from convictions", "act": "Code of Criminal Procedure, 1973"},
+                    {"section": "Section 378 CrPC", "description": "Appeal in case of acquittal", "act": "Code of Criminal Procedure, 1973"},
+                ]
+            },
+            "corporate": {
+                "agreement": [
+                    {"section": "Section 2(20) Companies Act", "description": "Definition of Company", "act": "Companies Act, 2013"},
+                    {"section": "Section 230 Companies Act", "description": "Power to compromise or make arrangements with creditors and members", "act": "Companies Act, 2013"},
+                ],
+                "petition": [
+                    {"section": "Section 241 Companies Act", "description": "Application to Tribunal for relief in cases of oppression", "act": "Companies Act, 2013"},
+                    {"section": "Section 244 Companies Act", "description": "Application by Central Government for relief in cases of oppression", "act": "Companies Act, 2013"},
+                ]
+            },
+            "family": {
+                "petition": [
+                    {"section": "Section 13 Hindu Marriage Act", "description": "Divorce", "act": "Hindu Marriage Act, 1955"},
+                    {"section": "Section 24 Hindu Marriage Act", "description": "Maintenance pendente lite and expenses of proceedings", "act": "Hindu Marriage Act, 1955"},
+                    {"section": "Section 125 CrPC", "description": "Order for maintenance of wives, children and parents", "act": "Code of Criminal Procedure, 1973"},
+                ],
+                "divorce": [
+                    {"section": "Section 13 Hindu Marriage Act", "description": "Divorce", "act": "Hindu Marriage Act, 1955"},
+                    {"section": "Section 13B Hindu Marriage Act", "description": "Divorce by mutual consent", "act": "Hindu Marriage Act, 1955"},
+                ]
+            },
+            "labour": {
+                "petition": [
+                    {"section": "Section 2(s) Industrial Disputes Act", "description": "Definition of workman", "act": "Industrial Disputes Act, 1947"},
+                    {"section": "Section 25F Industrial Disputes Act", "description": "Conditions precedent to retrenchment", "act": "Industrial Disputes Act, 1947"},
+                    {"section": "Section 11A Industrial Disputes Act", "description": "Jurisdiction of Labour Courts", "act": "Industrial Disputes Act, 1947"},
+                ]
+            },
+            "constitutional": {
+                "petition": [
+                    {"section": "Article 32 Constitution", "description": "Remedies for enforcement of fundamental rights", "act": "Constitution of India"},
+                    {"section": "Article 226 Constitution", "description": "Power of High Courts to issue writs", "act": "Constitution of India"},
+                    {"section": "Article 14 Constitution", "description": "Equality before law", "act": "Constitution of India"},
+                    {"section": "Article 21 Constitution", "description": "Protection of life and personal liberty", "act": "Constitution of India"},
+                ]
+            }
+        }
+        
+        # Get relevant sections from database
+        suggestions = []
+        
+        if case_type in section_database:
+            if document_type in section_database[case_type]:
+                suggestions = section_database[case_type][document_type]
+            else:
+                # Get the first available document type for this case type
+                first_doc_type = list(section_database[case_type].keys())[0]
+                suggestions = section_database[case_type][first_doc_type]
+        
+        # If we have facts, we could use AI to suggest more specific sections
+        # For now, return the predefined suggestions
+        
+        return suggestions[:10]  # Return top 10 suggestions
 
 # Lazy singleton instance
 _legal_ai_instance = None
