@@ -1,0 +1,432 @@
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Scale, ArrowRight, CheckCircle } from 'lucide-react';
+import api from '../utils/api';
+
+const Login = ({ onLogin }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await api.post('/auth/login', {
+        email,
+        password
+      });
+
+      onLogin(response.data.access_token);
+      navigate('/dashboard');
+    } catch (err) {
+      const errorDetail = err.response?.data?.detail;
+      if (Array.isArray(errorDetail)) {
+        setError(errorDetail.map(e => e.msg).join(', '));
+      } else if (typeof errorDetail === 'string') {
+        setError(errorDetail);
+      } else {
+        setError('Login failed. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-white dark:bg-black relative overflow-hidden">
+      {/* Subtle Grid Pattern - Rivian Style */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.02)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px]"></div>
+      
+      {/* Gradient Orb - Top Right */}
+      <div className="absolute -top-40 -right-40 w-80 h-80 bg-amber-400/20 dark:bg-amber-400/10 rounded-full blur-3xl"></div>
+      
+      {/* Gradient Orb - Bottom Left */}
+      <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-400/20 dark:bg-blue-400/10 rounded-full blur-3xl"></div>
+
+      <div className="relative min-h-screen flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl w-full grid lg:grid-cols-2 gap-16 items-center">
+          
+          {/* Left Side - Hero Content */}
+          <div className="hidden lg:block space-y-8 animate-fade-in">
+            {/* Logo & Title */}
+            <div className="space-y-6">
+              <div className="flex items-center space-x-4">
+                <div className="bg-gradient-to-br from-amber-400 to-amber-600 p-4 rounded-2xl shadow-2xl transform hover:rotate-3 transition-transform duration-300">
+                  <Scale className="w-12 h-12 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold gradient-text">LawMind</h1>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">AI Legal Excellence</p>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <h2 className="text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white leading-tight">
+                  Legal Drafting,
+                  <span className="block gradient-text mt-2">
+                    Reimagined
+                  </span>
+                </h2>
+                
+                <p className="text-xl text-gray-600 dark:text-gray-400 leading-relaxed max-w-lg">
+                  India's most advanced AI-powered legal assistant. Draft petitions, analyze cases, and elevate your practice.
+                </p>
+              </div>
+            </div>
+
+            {/* Feature Highlights */}
+            <div className="space-y-4 pt-4">
+              {[
+                'AI-Powered Petition Drafting',
+                'Real-time Quality Analysis',
+                'Indian Legal Citation Database',
+                'Secure Document Management'
+              ].map((feature, index) => (
+                <div
+                  key={index}
+                  className="flex items-center space-x-3 group"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <div className="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-lg group-hover:bg-amber-200 dark:group-hover:bg-amber-900/50 transition-colors">
+                    <CheckCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <span className="text-gray-700 dark:text-gray-300 font-medium">{feature}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-6 pt-8 border-t border-gray-200 dark:border-gray-800">
+              <div>
+                <div className="text-3xl font-bold gradient-text">10K+</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Drafts Generated</div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold gradient-text">99%</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Accuracy</div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold gradient-text">24/7</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">AI Support</div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Right Side - Login Form */}
+          <div className="w-full max-w-md mx-auto lg:mx-0 animate-slide-up">
+            <div className="premium-card p-8 sm:p-10">
+              {/* Mobile Logo */}
+              <div className="lg:hidden flex items-center space-x-3 mb-8">
+                <div className="bg-gradient-to-br from-amber-400 to-amber-600 p-3 rounded-xl">
+                  <Scale className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold gradient-text">LawMind</h1>
+                  <p className="text-gray-600 dark:text-gray-400 text-xs">AI Legal Assistant</p>
+                </div>
+              </div>
+
+              <div className="space-y-2 mb-8">
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Welcome Back</h2>
+                <p className="text-gray-600 dark:text-gray-400">Sign in to access your legal workspace</p>
+              </div>
+
+              {error && (
+                <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg animate-scale-in">
+                  <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-4 py-3.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-400 focus:border-transparent text-gray-900 dark:text-white transition-all duration-200"
+                    placeholder="you@example.com"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Password
+                  </label>
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-4 py-3.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-400 focus:border-transparent text-gray-900 dark:text-white transition-all duration-200"
+                    placeholder="••••••••"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full group relative flex items-center justify-center space-x-2 px-6 py-4 bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                >
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  ) : (
+                    <>
+                      <span>Sign In</span>
+                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </>
+                  )}
+                </button>
+              </form>
+
+              <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800">
+                <p className="text-center text-sm text-gray-600 dark:text-gray-400">
+                  Don't have an account?{' '}
+                  <Link
+                    to="/register"
+                    className="font-semibold gradient-text hover:underline"
+                  >
+                    Create Account
+                  </Link>
+                </p>
+              </div>
+            </div>
+
+            {/* Trust Badge */}
+            <div className="mt-6 text-center">
+              <p className="text-xs text-gray-500 dark:text-gray-500">
+                🔒 Secured with 256-bit encryption
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Login;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await api.post('/auth/login', {
+        email,
+        password
+      });
+
+      onLogin(response.data.access_token);
+      navigate('/dashboard');
+    } catch (err) {
+      // Handle error - detail can be string or array of validation errors
+      const errorDetail = err.response?.data?.detail;
+      if (Array.isArray(errorDetail)) {
+        setError(errorDetail.map(e => e.msg).join(', '));
+      } else if (typeof errorDetail === 'string') {
+        setError(errorDetail);
+      } else {
+        setError('Login failed. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 relative overflow-hidden">
+      {/* Animated background pattern */}
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjAzKSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-20"></div>
+      
+      {/* Glowing orbs */}
+      <div className="absolute top-0 left-0 w-96 h-96 bg-blue-500 rounded-full filter blur-3xl opacity-20 animate-pulse"></div>
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-indigo-500 rounded-full filter blur-3xl opacity-20 animate-pulse" style={{animationDelay: '1s'}}></div>
+
+      <div className="relative min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl w-full grid lg:grid-cols-2 gap-8 items-center">
+          
+          {/* Left side - Branding */}
+          <div className="hidden lg:block text-white space-y-8">
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <div className="bg-gradient-to-br from-amber-400 to-amber-600 p-3 rounded-xl shadow-2xl">
+                  <Scale className="w-10 h-10 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-400 to-amber-200 bg-clip-text text-transparent">
+                    LawMind
+                  </h1>
+                  <p className="text-blue-200 text-sm">AI-Powered Legal Excellence</p>
+                </div>
+              </div>
+              
+              <h2 className="text-5xl font-bold leading-tight">
+                Transform Your
+                <span className="block bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-200 bg-clip-text text-transparent">
+                  Legal Practice
+                </span>
+              </h2>
+              
+              <p className="text-xl text-blue-100">
+                India's Most Advanced AI Legal Drafting Assistant
+              </p>
+            </div>
+
+            {/* Features */}
+            <div className="space-y-4">
+              <div className="flex items-start space-x-3 bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                <Shield className="w-6 h-6 text-amber-400 flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="font-semibold text-lg">Enterprise Security</h3>
+                  <p className="text-blue-200 text-sm">Bank-grade encryption for your legal documents</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3 bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                <Sparkles className="w-6 h-6 text-amber-400 flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="font-semibold text-lg">AI-Powered Drafting</h3>
+                  <p className="text-blue-200 text-sm">Generate perfect legal documents in seconds</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3 bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                <Award className="w-6 h-6 text-amber-400 flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="font-semibold text-lg">Trusted by 10,000+ Legal Professionals</h3>
+                  <p className="text-blue-200 text-sm">Join India's leading legal tech platform</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right side - Login Form */}
+          <div className="w-full">
+            <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-8 lg:p-10 border border-white/20">
+              {/* Mobile branding */}
+              <div className="lg:hidden mb-8 text-center">
+                <div className="flex justify-center mb-4">
+                  <div className="bg-gradient-to-br from-amber-400 to-amber-600 p-3 rounded-xl shadow-lg">
+                    <Scale className="w-10 h-10 text-white" />
+                  </div>
+                </div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-amber-600 to-amber-800 bg-clip-text text-transparent">
+                  LawMind
+                </h1>
+              </div>
+
+              <div className="text-center mb-8">
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                  Welcome Back
+                </h2>
+                <p className="text-gray-600">
+                  Sign in to access your legal workspace
+                </p>
+              </div>
+
+              <form className="space-y-6" onSubmit={handleSubmit}>
+                {error && (
+                  <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-r-lg shadow-sm">
+                    <p className="font-medium">Authentication Error</p>
+                    <p className="text-sm">{error}</p>
+                  </div>
+                )}
+
+                <div className="space-y-5">
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                      Email Address
+                    </label>
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      required
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition duration-200 text-gray-900 placeholder-gray-400"
+                      placeholder="advocate@lawfirm.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+                      Password
+                    </label>
+                    <input
+                      id="password"
+                      name="password"
+                      type="password"
+                      required
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition duration-200 text-gray-900 placeholder-gray-400"
+                      placeholder="••••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold py-3.5 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                >
+                  {loading ? (
+                    <span className="flex items-center justify-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Signing in...
+                    </span>
+                  ) : (
+                    'Sign In to Your Account'
+                  )}
+                </button>
+
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-200"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-4 bg-white text-gray-500">New to LawMind?</span>
+                  </div>
+                </div>
+
+                <Link
+                  to="/register"
+                  className="block w-full text-center px-6 py-3 border-2 border-amber-500 text-amber-600 font-semibold rounded-xl hover:bg-amber-50 transition duration-200"
+                >
+                  Create Your Account
+                </Link>
+              </form>
+
+              <p className="mt-6 text-center text-xs text-gray-500">
+                By signing in, you agree to our Terms of Service and Privacy Policy
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Login;
