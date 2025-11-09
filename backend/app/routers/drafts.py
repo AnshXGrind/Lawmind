@@ -13,6 +13,7 @@ from app.models.database_models import User, Draft
 from app.services.ai_service import legal_ai
 from app.services.citation_service import citation_service
 from app.services.case_law_service import case_law_service
+from app.services.encryption_service import encryption_service
 
 router = APIRouter()
 
@@ -639,4 +640,186 @@ async def insert_citation(
         raise HTTPException(
             status_code=500,
             detail=f"Error inserting citation: {str(e)}"
+        )
+
+@router.post("/drafts/{draft_id}/encrypt")
+async def encrypt_draft(
+    draft_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Encrypt a draft's content using AES-256 encryption
+    Requires user to have an encryption key set in their profile
+    """
+    try:
+        # Get draft and verify ownership
+        draft = db.query(Draft).filter(
+            Draft.id == draft_id,
+            Draft.user_id == current_user.id
+        ).first()
+        
+        if not draft:
+            raise HTTPException(status_code=404, detail="Draft not found")
+        
+        if draft.is_encrypted:
+            raise HTTPException(status_code=400, detail="Draft is already encrypted")
+        
+        # Check if user has encryption key
+        if not current_user.encryption_key:
+            # Generate new encryption key for user
+            user_key = encryption_service.generate_user_key()
+            current_user.encryption_key = user_key
+            db.commit()
+        else:
+            user_key = current_user.encryption_key
+        
+        # Encrypt the content
+        encrypted_content, iv = encryption_service.encrypt_draft_content(
+            draft.content,
+            user_key
+        )
+        
+        # Update draft
+        draft.content = encrypted_content
+        draft.encryption_iv = iv
+        draft.is_encrypted = True
+        
+        db.commit()
+        db.refresh(draft)
+        
+        return {
+            "success": True,
+            "draft_id": draft_id,
+            "is_encrypted": True,
+            "message": "Draft encrypted successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Encryption failed: {str(e)}"
+        )
+
+@router.post("/drafts/{draft_id}/decrypt")
+async def decrypt_draft(
+    draft_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Decrypt a draft's content
+    Returns the decrypted content temporarily (not saved to DB)
+    """
+    try:
+        # Get draft and verify ownership
+        draft = db.query(Draft).filter(
+            Draft.id == draft_id,
+            Draft.user_id == current_user.id
+        ).first()
+        
+        if not draft:
+            raise HTTPException(status_code=404, detail="Draft not found")
+        
+        if not draft.is_encrypted:
+            raise HTTPException(status_code=400, detail="Draft is not encrypted")
+        
+        if not current_user.encryption_key:
+            raise HTTPException(status_code=400, detail="No encryption key found")
+        
+        # Decrypt the content
+        decrypted_content = encryption_service.decrypt_draft_content(
+            draft.content,
+            current_user.encryption_key,
+            draft.encryption_iv
+        )
+        
+        return {
+            "success": True,
+            "draft_id": draft_id,
+            "content": decrypted_content,
+            "is_encrypted": True
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Decryption failed: {str(e)}"
+        )
+
+@router.post("/drafts/{draft_id}/toggle-encryption")
+async def toggle_draft_encryption(
+    draft_id: int,
+    encrypt: bool,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Toggle encryption on/off for a draft
+    """
+    try:
+        # Get draft
+        draft = db.query(Draft).filter(
+            Draft.id == draft_id,
+            Draft.user_id == current_user.id
+        ).first()
+        
+        if not draft:
+            raise HTTPException(status_code=404, detail="Draft not found")
+        
+        if encrypt and not draft.is_encrypted:
+            # Encrypt
+            if not current_user.encryption_key:
+                user_key = encryption_service.generate_user_key()
+                current_user.encryption_key = user_key
+                db.commit()
+            else:
+                user_key = current_user.encryption_key
+            
+            encrypted_content, iv = encryption_service.encrypt_draft_content(
+                draft.content,
+                user_key
+            )
+            
+            draft.content = encrypted_content
+            draft.encryption_iv = iv
+            draft.is_encrypted = True
+            
+        elif not encrypt and draft.is_encrypted:
+            # Decrypt permanently
+            if not current_user.encryption_key:
+                raise HTTPException(status_code=400, detail="No encryption key found")
+            
+            decrypted_content = encryption_service.decrypt_draft_content(
+                draft.content,
+                current_user.encryption_key,
+                draft.encryption_iv
+            )
+            
+            draft.content = decrypted_content
+            draft.encryption_iv = None
+            draft.is_encrypted = False
+        
+        db.commit()
+        db.refresh(draft)
+        
+        return {
+            "success": True,
+            "draft_id": draft_id,
+            "is_encrypted": draft.is_encrypted,
+            "content": draft.content if not draft.is_encrypted else None
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Encryption toggle failed: {str(e)}"
         )

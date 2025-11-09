@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, Download, Lightbulb, BookOpen, Copy, FileDown, Check, Scale, ExternalLink } from 'lucide-react';
+import { Save, Download, Lightbulb, BookOpen, Copy, FileDown, Check, Scale, ExternalLink, Lock, Unlock } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import api from '../utils/api';
 import QualityScoreDashboard from '../components/QualityScoreDashboard';
@@ -22,12 +22,15 @@ const DraftEditor = () => {
   const [caseLawResults, setCaseLawResults] = useState([]);
   const [caseLawLoading, setCaseLawLoading] = useState(false);
   const [showCaseLaw, setShowCaseLaw] = useState(false);
+  const [isEncrypted, setIsEncrypted] = useState(false);
+  const [encryptionLoading, setEncryptionLoading] = useState(false);
 
   const fetchDraft = useCallback(async () => {
     try {
       const response = await api.get(`/drafts/${id}`);
       setDraft(response.data);
       setContent(response.data.content);
+      setIsEncrypted(response.data.is_encrypted || false);
     } catch (err) {
       console.error(err);
       alert('Failed to load draft');
@@ -235,6 +238,38 @@ const DraftEditor = () => {
     }
   };
 
+  const toggleEncryption = async () => {
+    if (encryptionLoading) return;
+    
+    const confirmMessage = isEncrypted
+      ? 'Decrypt this draft? The content will be stored in plain text.'
+      : 'Encrypt this draft? The content will be secured with AES-256 encryption.';
+    
+    if (!window.confirm(confirmMessage)) return;
+    
+    setEncryptionLoading(true);
+    try {
+      const response = await api.post(`/drafts/drafts/${id}/toggle-encryption`, null, {
+        params: { encrypt: !isEncrypted }
+      });
+      
+      setIsEncrypted(response.data.is_encrypted);
+      
+      // If decrypted, update content
+      if (!response.data.is_encrypted && response.data.content) {
+        setContent(response.data.content);
+      }
+      
+      alert(isEncrypted ? 'Draft decrypted successfully!' : 'Draft encrypted successfully!');
+    } catch (err) {
+      console.error('Encryption toggle failed:', err);
+      const errorMsg = err.response?.data?.detail || 'Encryption operation failed';
+      alert(errorMsg);
+    } finally {
+      setEncryptionLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -270,6 +305,31 @@ const DraftEditor = () => {
                   <span>Saved {new Date(lastSaved).toLocaleTimeString()}</span>
                 </div>
               )}
+
+              <button
+                onClick={toggleEncryption}
+                disabled={encryptionLoading}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition ${
+                  isEncrypted
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white hover:from-amber-600 hover:to-amber-700'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                } ${encryptionLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title={isEncrypted ? 'Decrypt draft' : 'Encrypt draft with AES-256'}
+              >
+                {encryptionLoading ? (
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                ) : isEncrypted ? (
+                  <>
+                    <Lock className="w-4 h-4" />
+                    <span>Encrypted</span>
+                  </>
+                ) : (
+                  <>
+                    <Unlock className="w-4 h-4" />
+                    <span>Not Encrypted</span>
+                  </>
+                )}
+              </button>
 
               <button
                 onClick={handleCopyToClipboard}

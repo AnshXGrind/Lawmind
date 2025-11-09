@@ -21,6 +21,7 @@ class User(Base):
     preferences = Column(JSON, nullable=True)  # UI preferences, language, theme
     subscription_tier = Column(String, default="free")  # free, pro, enterprise
     storage_used = Column(Integer, default=0)  # in bytes
+    encryption_key = Column(String, nullable=True)  # User's 256-bit AES encryption key (hex)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -66,6 +67,10 @@ class Draft(Base):
     word_count = Column(Integer, default=0)
     page_count = Column(Integer, default=0)
     extracted_from_doc = Column(Integer, ForeignKey("uploaded_documents.id"), nullable=True)  # Link to source OCR doc
+    
+    # Encryption fields
+    is_encrypted = Column(Boolean, default=False)  # Whether content is encrypted
+    encryption_iv = Column(String, nullable=True)  # Initialization vector for AES-256
     
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
