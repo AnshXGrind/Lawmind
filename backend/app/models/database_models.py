@@ -22,6 +22,7 @@ class User(Base):
     subscription_tier = Column(String, default="free")  # free, pro, enterprise
     storage_used = Column(Integer, default=0)  # in bytes
     encryption_key = Column(String, nullable=True)  # User's 256-bit AES encryption key (hex)
+    role = Column(String, default="advocate")  # admin, advocate, student, guest - for RBAC
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

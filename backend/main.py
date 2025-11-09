@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import uvicorn
 
-from app.routers import drafts, auth, documents, citations
+from app.routers import drafts, auth, documents, citations, dataset, analytics
 from app.core.config import settings
 from app.core.database import init_db
 
@@ -42,6 +42,8 @@ app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(drafts.router, prefix="/api/drafts", tags=["Legal Drafts"])
 app.include_router(documents.router, prefix="/api/documents", tags=["Documents"])
 app.include_router(citations.router, prefix="/api/citations", tags=["Citations"])
+app.include_router(dataset.router, prefix="/api/dataset", tags=["Dataset Management"])
+app.include_router(analytics.router, prefix="/api/analytics", tags=["Analytics & Insights"])
 
 @app.get("/")
 async def root():
