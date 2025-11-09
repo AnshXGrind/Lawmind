@@ -1,10 +1,12 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { LogOut, Home, PlusCircle, User } from 'lucide-react';
+import { LogOut, Home, PlusCircle, User, Moon, Sun } from 'lucide-react';
 import Logo from './Logo';
+import { useTheme } from '../contexts/ThemeContext';
 
 const Navbar = ({ onLogout }) => {
   const navigate = useNavigate();
+  const { isDark, toggleTheme } = useTheme();
 
   const handleLogout = () => {
     onLogout();
@@ -41,6 +43,19 @@ const Navbar = ({ onLogout }) => {
 
           {/* User Menu */}
           <div className="flex items-center space-x-3">
+            {/* Dark Mode Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="flex items-center space-x-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg transition-all duration-200 border border-gray-200 dark:border-gray-600"
+              title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {isDark ? (
+                <Sun className="w-4 h-4 text-yellow-500" />
+              ) : (
+                <Moon className="w-4 h-4 text-gray-600" />
+              )}
+            </button>
+
             <div className="hidden sm:flex items-center space-x-2 px-4 py-2 bg-gray-100 rounded-lg border border-gray-200">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               <User className="w-4 h-4 text-gray-600" />

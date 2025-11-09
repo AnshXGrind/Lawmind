@@ -15,11 +15,64 @@ const NewDraft = () => {
   const [selectedSections, setSelectedSections] = useState([]);
   const suggestionsRef = useRef(null);
   const [showValidation, setShowValidation] = useState(false);
+  const [courtSearch, setCourtSearch] = useState('');
+  const [showCourtDropdown, setShowCourtDropdown] = useState(false);
+
+  // Indian Courts List
+  const indianCourts = [
+    // Supreme Court
+    'Supreme Court of India',
+    // High Courts (28)
+    'Allahabad High Court',
+    'Andhra Pradesh High Court',
+    'Bombay High Court',
+    'Calcutta High Court',
+    'Chhattisgarh High Court',
+    'Delhi High Court',
+    'Gauhati High Court',
+    'Gujarat High Court',
+    'Himachal Pradesh High Court',
+    'Jammu and Kashmir High Court',
+    'Jharkhand High Court',
+    'Karnataka High Court',
+    'Kerala High Court',
+    'Madhya Pradesh High Court',
+    'Madras High Court',
+    'Manipur High Court',
+    'Meghalaya High Court',
+    'Orissa High Court',
+    'Patna High Court',
+    'Punjab and Haryana High Court',
+    'Rajasthan High Court',
+    'Sikkim High Court',
+    'Telangana High Court',
+    'Tripura High Court',
+    'Uttarakhand High Court',
+    // Common District Courts
+    'District Court',
+    'Sessions Court',
+    'Civil Court',
+    'Family Court',
+    'Consumer Court',
+    'Labour Court',
+    'Revenue Court',
+    // Tribunals
+    'National Green Tribunal',
+    'Central Administrative Tribunal',
+    'Income Tax Appellate Tribunal',
+    'National Company Law Tribunal',
+    'Debt Recovery Tribunal',
+    'Armed Forces Tribunal'
+  ];
+
+  const filteredCourts = indianCourts.filter(court =>
+    court.toLowerCase().includes(courtSearch.toLowerCase())
+  );
 
   const [formData, setFormData] = useState({
     document_type: 'petition',
     case_type: 'civil',
-    court: 'district',
+    court: '',
     title: '',
     facts: '',
     petitioner: '',
@@ -243,20 +296,44 @@ const NewDraft = () => {
             {/* Court Level */}
             <div>
               <label className="block text-sm font-medium text-blue-200 mb-2">
-                Court Level <span className="text-red-400">*</span>
+                Court Name <span className="text-red-400">*</span>
               </label>
-              <select
-                name="court"
-                value={formData.court}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-white backdrop-blur"
-                required
-              >
-                <option value="district" className="bg-slate-800">District Court</option>
-                <option value="high_court" className="bg-slate-800">High Court</option>
-                <option value="supreme_court" className="bg-slate-800">Supreme Court</option>
-                <option value="tribunal" className="bg-slate-800">Tribunal</option>
-              </select>
+              <div className="relative">
+                <input
+                  type="text"
+                  name="court"
+                  value={formData.court}
+                  onChange={(e) => {
+                    setFormData({ ...formData, court: e.target.value });
+                    setCourtSearch(e.target.value);
+                    setShowCourtDropdown(true);
+                  }}
+                  onFocus={() => setShowCourtDropdown(true)}
+                  placeholder="Search or type court name..."
+                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-white placeholder-gray-400 backdrop-blur"
+                  required
+                />
+                
+                {/* Court Dropdown */}
+                {showCourtDropdown && filteredCourts.length > 0 && (
+                  <div className="absolute z-10 w-full mt-2 bg-white rounded-lg shadow-xl border border-gray-200 max-h-60 overflow-y-auto">
+                    {filteredCourts.slice(0, 10).map((court, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => {
+                          setFormData({ ...formData, court });
+                          setCourtSearch(court);
+                          setShowCourtDropdown(false);
+                        }}
+                        className="w-full text-left px-4 py-3 hover:bg-blue-50 text-gray-800 text-sm border-b border-gray-100 last:border-b-0 transition"
+                      >
+                        {court}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Title */}
