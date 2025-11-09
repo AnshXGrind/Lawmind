@@ -2,9 +2,9 @@
 Legal drafts router
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from app.core.database import get_db
 from app.core.security import verify_token
@@ -12,6 +12,7 @@ from app.models.schemas import DraftRequest, DraftResponse, DocumentEditRequest,
 from app.models.database_models import User, Draft
 from app.services.ai_service import legal_ai
 from app.services.citation_service import citation_service
+from app.services.case_law_service import case_law_service
 
 router = APIRouter()
 
@@ -556,4 +557,86 @@ async def smart_search_drafts(
         raise HTTPException(
             status_code=500,
             detail=f"Error searching drafts: {str(e)}"
+        )
+
+@router.get("/case-law/search")
+async def search_case_law(
+    query: str = Query(..., description="Search query for case law"),
+    max_results: int = Query(10, ge=1, le=20, description="Maximum results to return"),
+    court: Optional[str] = Query(None, description="Filter by court"),
+    case_type: Optional[str] = Query(None, description="Filter by case type"),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Search Indian case law database
+    Returns relevant cases with citations
+    """
+    try:
+        cases = case_law_service.search_cases(
+            query=query,
+            max_results=max_results,
+            court=court,
+            case_type=case_type
+        )
+        
+        return {
+            "query": query,
+            "total_results": len(cases),
+            "cases": cases
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error searching case law: {str(e)}"
+        )
+
+@router.post("/drafts/{draft_id}/insert-citation")
+async def insert_citation(
+    draft_id: int,
+    citation_text: str = Query(..., description="Citation text to insert"),
+    position: int = Query(0, description="Position to insert (0 = end)"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Insert a formatted citation into a draft
+    """
+    try:
+        # Get draft
+        draft = db.query(Draft).filter(
+            Draft.id == draft_id,
+            Draft.user_id == current_user.id
+        ).first()
+        
+        if not draft:
+            raise HTTPException(status_code=404, detail="Draft not found")
+        
+        # Format citation
+        formatted_citation = f"\n\n**Citation:** {citation_text}\n"
+        
+        # Insert at position
+        content = draft.content or ""
+        if position == 0 or position >= len(content):
+            draft.content = content + formatted_citation
+        else:
+            draft.content = content[:position] + formatted_citation + content[position:]
+        
+        db.commit()
+        db.refresh(draft)
+        
+        return {
+            "success": True,
+            "draft_id": draft_id,
+            "citation": citation_text,
+            "content": draft.content
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error inserting citation: {str(e)}"
         )

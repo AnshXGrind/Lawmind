@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, Download, Lightbulb, BookOpen, Copy, FileDown, Check } from 'lucide-react';
+import { Save, Download, Lightbulb, BookOpen, Copy, FileDown, Check, Scale, ExternalLink } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import api from '../utils/api';
 import QualityScoreDashboard from '../components/QualityScoreDashboard';
@@ -19,6 +19,9 @@ const DraftEditor = () => {
   const [aiResult, setAiResult] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [showQuality, setShowQuality] = useState(true);
+  const [caseLawResults, setCaseLawResults] = useState([]);
+  const [caseLawLoading, setCaseLawLoading] = useState(false);
+  const [showCaseLaw, setShowCaseLaw] = useState(false);
 
   const fetchDraft = useCallback(async () => {
     try {
@@ -192,6 +195,46 @@ const DraftEditor = () => {
     }
   };
 
+  // Case Law Search
+  const searchCaseLaw = async () => {
+    setCaseLawLoading(true);
+    setShowCaseLaw(true);
+    try {
+      const searchQuery = `${draft?.case_type} ${draft?.sections || ''} ${content.substring(0, 200)}`;
+      const response = await api.get('/drafts/case-law/search', {
+        params: {
+          query: searchQuery,
+          max_results: 10,
+          court: draft?.court,
+          case_type: draft?.case_type
+        }
+      });
+      setCaseLawResults(response.data.cases || []);
+    } catch (err) {
+      console.error('Case law search failed:', err);
+      alert('Failed to search case law');
+    } finally {
+      setCaseLawLoading(false);
+    }
+  };
+
+  const insertCitation = async (caseData) => {
+    try {
+      const citationText = `${caseData.title}, ${caseData.citation}`;
+      const response = await api.post(`/drafts/drafts/${id}/insert-citation`, null, {
+        params: {
+          citation_text: citationText,
+          position: 0
+        }
+      });
+      setContent(response.data.content);
+      alert('Citation inserted successfully!');
+    } catch (err) {
+      console.error('Failed to insert citation:', err);
+      alert('Failed to insert citation');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -305,9 +348,12 @@ const DraftEditor = () => {
         {/* Tab Selector */}
         <div className="mb-4 flex space-x-2">
           <button
-            onClick={() => setShowQuality(false)}
+            onClick={() => {
+              setShowQuality(false);
+              setShowCaseLaw(false);
+            }}
             className={`px-4 py-2 rounded-lg font-medium transition ${
-              !showQuality
+              !showQuality && !showCaseLaw
                 ? 'bg-purple-600 text-white'
                 : 'bg-white text-gray-600 hover:bg-gray-100'
             }`}
@@ -316,14 +362,34 @@ const DraftEditor = () => {
             AI Assistant
           </button>
           <button
-            onClick={() => setShowQuality(true)}
+            onClick={() => {
+              setShowQuality(true);
+              setShowCaseLaw(false);
+            }}
             className={`px-4 py-2 rounded-lg font-medium transition ${
-              showQuality
+              showQuality && !showCaseLaw
                 ? 'bg-blue-600 text-white'
                 : 'bg-white text-gray-600 hover:bg-gray-100'
             }`}
           >
             📊 Quality Score
+          </button>
+          <button
+            onClick={() => {
+              setShowQuality(false);
+              setShowCaseLaw(true);
+              if (caseLawResults.length === 0) {
+                searchCaseLaw();
+              }
+            }}
+            className={`px-4 py-2 rounded-lg font-medium transition ${
+              showCaseLaw
+                ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Scale className="w-4 h-4 inline mr-2" />
+            Case Law
           </button>
         </div>
 
@@ -341,10 +407,83 @@ const DraftEditor = () => {
             </div>
           </div>
 
-          {/* Right Sidebar - Quality Score or AI Assistant */}
+          {/* Right Sidebar - Quality Score, AI Assistant, or Case Law */}
           <div className="lg:col-span-1">
             {showQuality ? (
               <QualityScoreDashboard draftId={id} />
+            ) : showCaseLaw ? (
+              <div className="bg-white rounded-lg shadow-md p-6 sticky top-24">
+                <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                  <Scale className="w-5 h-5 text-amber-600" />
+                  <span>Relevant Case Law</span>
+                </h2>
+
+                {caseLawLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                ) : caseLawResults.length > 0 ? (
+                  <div className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto">
+                    {caseLawResults.map((caseItem, index) => (
+                      <div
+                        key={index}
+                        className="p-4 bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200 rounded-lg hover:shadow-md transition"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <h3 className="font-semibold text-gray-900 text-sm leading-tight flex-1">
+                            {caseItem.title}
+                          </h3>
+                          <span className="text-xs bg-amber-600 text-white px-2 py-1 rounded ml-2">
+                            {caseItem.relevance_score}%
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-amber-800 font-medium mb-2">
+                          {caseItem.citation}
+                        </p>
+
+                        <p className="text-xs text-gray-600 mb-3 line-clamp-3">
+                          {caseItem.excerpt}
+                        </p>
+
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <span>{caseItem.court}</span>
+                          <span>{caseItem.date}</span>
+                        </div>
+
+                        <div className="mt-3 flex gap-2">
+                          <button
+                            onClick={() => insertCitation(caseItem)}
+                            className="flex-1 px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded transition"
+                          >
+                            Insert Citation
+                          </button>
+                          <a
+                            href={caseItem.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-2 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium rounded border border-gray-300 transition flex items-center space-x-1"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            <span>View</span>
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <Scale className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                    <p className="text-gray-500 text-sm">No case law found</p>
+                    <button
+                      onClick={searchCaseLaw}
+                      className="mt-4 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm rounded transition"
+                    >
+                      Search Again
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="bg-white rounded-lg shadow-md p-6 sticky top-24">
               <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center space-x-2">
