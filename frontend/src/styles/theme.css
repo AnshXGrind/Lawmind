@@ -1,0 +1,239 @@
+/**
+ * LawMind — Design System Tokens
+ * Import this after index.css for page-level overrides.
+ *
+ * Usage:  import '../styles/theme.css';
+ */
+
+/* ============================================================
+   TYPOGRAPHY
+   ============================================================ */
+.lm-heading {
+  font-family: var(--font-heading);
+  color: var(--paper);
+  line-height: 1.2;
+}
+
+.lm-body {
+  font-family: var(--font-body);
+  color: var(--paper);
+}
+
+.lm-legal {
+  font-family: var(--font-legal);
+  line-height: 1.8;
+  color: var(--paper);
+}
+
+.lm-mono {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+/* ============================================================
+   LAYOUT PRIMITIVES
+   ============================================================ */
+.lm-app {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg-main);
+  color: var(--paper);
+  font-family: var(--font-body);
+}
+
+.lm-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #0d0d15;
+  overflow: hidden;
+}
+
+.lm-content {
+  padding: 28px 32px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* ============================================================
+   CARDS
+   ============================================================ */
+.lm-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.lm-card:hover {
+  border-color: var(--border-gold);
+}
+
+.lm-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.lm-card-title {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--paper);
+}
+
+.lm-card-gold {
+  background: linear-gradient(135deg, rgba(139, 26, 26, 0.15), rgba(201, 168, 76, 0.08));
+  border: 1px solid var(--border-gold);
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.lm-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  font-family: var(--font-body);
+  transition: all 0.2s;
+}
+
+.lm-btn-primary {
+  background: linear-gradient(135deg, var(--gold), #a87c2a);
+  color: var(--ink);
+}
+
+.lm-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(201, 168, 76, 0.3);
+}
+
+.lm-btn-ghost {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--paper);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.lm-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.lm-btn-danger {
+  background: rgba(139, 26, 26, 0.15);
+  color: var(--danger);
+  border: 1px solid rgba(252, 129, 129, 0.2);
+}
+
+/* ============================================================
+   BADGES
+   ============================================================ */
+.lm-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.lm-badge-gold    { background: rgba(201,168,76,0.12);  color: var(--gold-light); }
+.lm-badge-blue    { background: rgba(99,179,237,0.12);  color: #90cdf4; }
+.lm-badge-orange  { background: rgba(252,129,74,0.12);  color: #fbd38d; }
+.lm-badge-purple  { background: rgba(154,117,195,0.12); color: #d6bcfa; }
+.lm-badge-green   { background: rgba(72,187,120,0.12);  color: #68d391; }
+.lm-badge-red     { background: rgba(252,129,129,0.12); color: #fc8181; }
+
+/* ============================================================
+   FORM INPUTS
+   ============================================================ */
+.lm-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--paper);
+  font-family: var(--font-body);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.lm-input:focus {
+  border-color: var(--border-gold);
+}
+
+.lm-input::placeholder {
+  color: var(--muted);
+}
+
+/* ============================================================
+   STATUS DOTS
+   ============================================================ */
+.lm-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+}
+
+.lm-dot::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.lm-dot-done::before   { background: #68d391; box-shadow: 0 0 6px rgba(104,211,145,0.5); }
+.lm-dot-draft::before  { background: var(--gold); box-shadow: 0 0 6px rgba(201,168,76,0.5); }
+.lm-dot-review::before { background: #fc8181; box-shadow: 0 0 6px rgba(252,129,121,0.5); }
+
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar              { width: 5px; height: 5px; }
+::-webkit-scrollbar-track        { background: transparent; }
+::-webkit-scrollbar-thumb        { background: rgba(201,168,76,0.2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover  { background: rgba(201,168,76,0.35); }
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes lm-fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes lm-pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(0.85); }
+}
+
+.lm-animate-fade-up { animation: lm-fade-up 0.5s ease both; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 1100px) {
+  .lm-sidebar-hidden { display: none !important; }
+  .lm-grid-full { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 768px) {
+  .lm-content { padding: 16px !important; }
+  .lm-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+@media (max-width: 480px) {
+  .lm-stats-grid { grid-template-columns: 1fr !important; }
+}

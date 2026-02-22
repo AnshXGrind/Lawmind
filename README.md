@@ -1,497 +1,229 @@
-# 🧠 LawMind – AI Legal Drafting Assistant
+# 🧠 LawMind — AI Legal Drafting Assistant
 
-![LawMind Logo](https://img.shields.io/badge/LawMind-AI%20Legal%20Assistant-blue)
-![Python](https://img.shields.io/badge/Python-3.11-blue)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.104-green)
-![React](https://img.shields.io/badge/React-18.2-blue)
-![License](https://img.shields.io/badge/License-MIT-yellow)
+> **AI-powered legal document generation for Indian lawyers, built on free APIs.**
 
-## 🌍 Vision
-
-LawMind is a next-generation **AI-powered legal assistant** designed to help **advocates, interns, and legal firms** automate and streamline the process of **drafting, reviewing, and formatting legal documents**.
-
-It saves hours of manual effort by turning **voice or text prompts** into **professionally structured legal drafts**—while maintaining **accuracy, security, and confidentiality**.
+[![Python](https://img.shields.io/badge/Python-3.11-blue?style=flat-square)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.104-green?style=flat-square)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/React-18-blue?style=flat-square)](https://react.dev)
+[![Gemini](https://img.shields.io/badge/Gemini-1.5--Flash-orange?style=flat-square)](https://aistudio.google.com)
+[![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
+[![GSoC](https://img.shields.io/badge/GSoC-Ready-red?style=flat-square)](#gsoc-future-work)
+[![CI](https://github.com/AnshXGrind/Lawmind/actions/workflows/ci.yml/badge.svg)](https://github.com/AnshXGrind/Lawmind/actions)
 
 ---
 
-## 💡 Problem Statement
+## The Problem
 
-Legal professionals spend **3–5 hours** drafting each petition, notice, or affidavit—often repeating similar formats and manually searching for citations.
+Indian lawyers spend **4–8 hours** drafting a single petition from scratch.
+They must manually look up IPC/CrPC sections, format court documents, and cite precedents —
+all while juggling 20+ active cases.
 
-Existing AI tools are too generic, lacking:
-- ❌ Indian law context
-- ❌ Legal formatting standards
-- ❌ Data privacy & security
-- ❌ Citation management
+## The Solution
 
-**LawMind solves this** by combining:
-- ✅ Generative AI for intelligent draft creation
-- ✅ Indian law datasets for contextual relevance
-- ✅ Encrypted, cloud-based document handling
-- ✅ A sleek, professional UI experience
+LawMind lets a lawyer describe their case in plain English and generates a
+**professionally formatted, citation-rich legal document** in seconds.
 
----
-
-## 🚀 Live Demo & Deployment
-
-### Quick Deploy
-
-**Ready to deploy in production?**
-
-[![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/AnshXGrind/Lawmind)
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/AnshXGrind/Lawmind)
-
-**See:** 📚 [Complete Deployment Guide](DEPLOYMENT_GUIDE.md) | ✅ [Quick Checklist](DEPLOY_CHECKLIST.md)
+- ✅ Free AI via **Gemini 1.5 Flash** (no paid API key required)
+- ✅ Local vector search via **ChromaDB + Sentence Transformers** (no external service)
+- ✅ Covers petitions, contracts, bail applications, notices, affidavits
+- ✅ Indian court formatting — Supreme Court down to District Court
+- ✅ Suggests relevant IPC, CrPC, CPC, Constitution sections automatically
+- ✅ OCR upload for scanned documents (Tesseract + EasyOCR)
 
 ---
 
-## ✨ Features
+## Architecture
 
-### 🎯 Core Features
-
-1. **AI-Powered Draft Generation**
-   - Generate petitions, notices, affidavits, contracts, and more
-   - Context-aware legal language
-   - Court-specific formatting
-
-2. **Intelligent Citation Suggestions**
-   - Automatically suggest relevant case laws
-   - Indian law sections and acts
-   - Smart relevance scoring
-
-3. **Voice-to-Text Input**
-   - Speak your case details
-   - AI transcribes and structures the information
-   - Supports Indian languages
-
-4. **AI-Assisted Editing**
-   - Explain legal sections in simple language
-   - Simplify complex legal text
-   - Rephrase in formal legal tone
-   - Add relevant citations
-
-5. **Multi-Format Export**
-   - PDF and DOCX formats
-   - Professional formatting
-   - Optional watermarking
-
-6. **Secure & Private**
-   - End-to-end encryption
-   - User-owned data
-   - GDPR compliant
+```
+Lawyer Input
+     │
+     ▼
+React Frontend  (Dashboard · New Draft · Editor · Upload)
+     │
+     ▼
+FastAPI Backend
+/auth   /drafts   /citations   /documents   /analytics
+     │
+     ├──────────────────────┐
+     ▼                      ▼
+RAG Pipeline           Gemini 1.5 Flash
+ChromaDB               (free, fast, multilingual)
++ Sentence                   │
+  Transformers               ▼
+(local embed,          Professional
+ no API cost)          Legal Draft
+```
 
 ---
 
-## 🏗️ Architecture
+## Features
 
-### Technology Stack
-
-#### Backend
-- **Framework:** FastAPI (Python 3.11)
-- **Database:** SQLAlchemy + PostgreSQL/SQLite
-- **AI/ML:** 
-  - LangChain for LLM orchestration
-  - OpenAI GPT-4 / Anthropic Claude
-  - Sentence Transformers for embeddings
-  - FAISS for vector storage
-- **Authentication:** JWT tokens with bcrypt
-- **Document Processing:** python-docx, ReportLab
-
-#### Frontend
-- **Framework:** React 18
-- **Styling:** TailwindCSS
-- **State Management:** React Hooks
-- **HTTP Client:** Axios
-- **Routing:** React Router v6
-- **Icons:** Lucide React
-
-#### Infrastructure
-- **Containerization:** Docker & Docker Compose
-- **Web Server:** Nginx (for production)
-- **Cloud Deployment:** AWS/GCP/Azure ready
+| Feature | Status |
+|---|---|
+| AI draft generation (petition, contract, notice, affidavit) | ✅ Working |
+| Court-level selection (District → Supreme Court) | ✅ Working |
+| Legal section suggestions (IPC, CrPC, CPC, Constitution) | ✅ Working |
+| Document upload & OCR (PDF, image) | ✅ Working |
+| Draft editor with split-view and auto-save | ✅ Working |
+| PDF / DOCX export | ✅ Working |
+| JWT authentication | ✅ Working |
+| RAG-powered citation search (ChromaDB) | ✅ Working |
+| Professional dark legal SaaS UI | ✅ Working |
+| Analytics dashboard | ✅ Working |
+| Hindi / regional language support | 🚧 Roadmap |
+| Indian Kanoon live citation API | 🚧 Roadmap |
+| Collaborative multi-user editing | 🚧 Roadmap |
+| Fine-tuned Indian legal LLM | 🚧 Roadmap |
 
 ---
 
-## 🚀 Quick Start
+## Quick Start — 100% Free
 
 ### Prerequisites
 
-- **Python 3.11+**
-- **Node.js 18+**
-- **Docker & Docker Compose** (optional)
-- **OpenAI API Key** (required for AI features)
+- Python 3.11+
+- Node.js 18+
+- A free Gemini API key from [aistudio.google.com](https://aistudio.google.com/app/apikey)
 
-### Installation
-
-#### 1. Clone the Repository
+### 1. Clone
 
 ```bash
 git clone https://github.com/AnshXGrind/Lawmind.git
 cd Lawmind
 ```
 
-#### 2. Backend Setup
+### 2. Backend
 
 ```bash
 cd backend
-
-# Create virtual environment
 python -m venv venv
-.\venv\Scripts\activate  # Windows
-# source venv/bin/activate  # Linux/Mac
-
-# Install dependencies
+source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
-# Setup environment variables
-copy .env.example .env
-# Edit .env and add your API keys
+cp .env.example .env
+# Open .env and set:  GEMINI_API_KEY=your_key_here
 
-# Run the backend server
-python main.py
+uvicorn app.main:app --reload --port 8000
 ```
 
-Backend will be available at: `http://localhost:8000`
+Swagger UI: http://localhost:8000/docs
 
-#### 3. Frontend Setup
+### 3. Frontend
 
 ```bash
 cd frontend
-
-# Install dependencies
 npm install
-
-# Setup environment variables
-copy .env.example .env
-# Edit .env if needed
-
-# Run the development server
 npm start
 ```
 
-Frontend will be available at: `http://localhost:3000`
+App: http://localhost:3000
 
-### 🐳 Docker Deployment
+### 4. Get a Free Gemini API Key
+
+1. Visit https://aistudio.google.com/app/apikey
+2. Sign in with Google — no credit card, no billing
+3. Click **Create API key**
+4. Paste it in `backend/.env` as `GEMINI_API_KEY=your_key`
+
+**Free tier:** 15 requests/min · 1 million tokens/day — more than enough for development.
+
+---
+
+## Docker
 
 ```bash
-# From project root
-docker-compose up -d
+docker-compose up --build
 ```
 
-This will start:
-- Backend API: `http://localhost:8000`
-- Frontend: `http://localhost:3000`
-- PostgreSQL Database: `localhost:5432`
+Backend → http://localhost:8000 | Frontend → http://localhost:3000
 
 ---
 
-## 📖 Usage Guide
+## API Reference
 
-### 1. Register & Login
-- Navigate to `http://localhost:3000`
-- Create an account with your email
-- Login to access the dashboard
+Interactive docs: **http://localhost:8000/docs**
 
-### 2. Create a New Draft
-- Click "New Draft" button
-- Fill in the case details:
-  - Document type (Petition, Notice, etc.)
-  - Case type (Civil, Criminal, etc.)
-  - Court level
-  - Facts and parties
-  - Relief sought
-- Click "Generate Draft with AI"
-
-### 3. Edit Your Draft
-- Use the rich text editor
-- Select text to access AI tools:
-  - **Explain** - Simplify legal jargon
-  - **Simplify** - Make language accessible
-  - **Rephrase** - Formalize the tone
-  - **Add Citation** - Find relevant case laws
-
-### 4. Export Document
-- Save your draft
-- Export as PDF or DOCX
-- Download and use in court
+| Endpoint | Method | Description |
+|---|---|---|
+| `/auth/register` | POST | Create account |
+| `/auth/login` | POST | Get JWT token |
+| `/drafts/` | GET | List drafts |
+| `/drafts/` | POST | Generate AI draft |
+| `/drafts/{id}` | PUT | Update content |
+| `/drafts/{id}` | DELETE | Delete draft |
+| `/drafts/suggest-sections` | POST | Auto-suggest IPC/CrPC sections |
+| `/documents/upload` | POST | OCR upload (PDF/image) |
+| `/citations/search` | GET | Search legal citations |
+| `/analytics/summary` | GET | Usage analytics |
 
 ---
 
-## 🔧 Configuration
-
-### Environment Variables
-
-#### Backend (.env)
-
-```env
-# API Keys
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
-
-# Database
-DATABASE_URL=postgresql://user:pass@localhost/lawmind_db
-
-# Security
-SECRET_KEY=your-secret-key
-```
-
-#### Frontend (.env)
-
-```env
-REACT_APP_API_URL=http://localhost:8000/api
-```
-
----
-
-## 📡 API Documentation
-
-### Authentication Endpoints
-
-#### Register User
-```http
-POST /api/auth/register
-Content-Type: application/json
-
-{
-  "email": "user@example.com",
-  "password": "secure_password",
-  "full_name": "John Doe",
-  "organization": "ABC Law Firm"
-}
-```
-
-#### Login
-```http
-POST /api/auth/login
-Content-Type: application/json
-
-{
-  "email": "user@example.com",
-  "password": "secure_password"
-}
-```
-
-### Draft Endpoints
-
-#### Generate Draft
-```http
-POST /api/drafts/generate
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "document_type": "petition",
-  "case_type": "civil",
-  "court": "high_court",
-  "title": "Petition for Injunction",
-  "facts": "...",
-  "parties": {
-    "petitioner": "John Doe",
-    "respondent": "State of XYZ"
-  },
-  "sections": ["IPC 420", "Contract Act 10"],
-  "relief_sought": "...",
-  "tone": "formal"
-}
-```
-
-#### Get All Drafts
-```http
-GET /api/drafts/
-Authorization: Bearer <token>
-```
-
-#### Get Single Draft
-```http
-GET /api/drafts/{draft_id}
-Authorization: Bearer <token>
-```
-
-#### Update Draft
-```http
-PUT /api/drafts/{draft_id}?content=<new_content>
-Authorization: Bearer <token>
-```
-
-### AI Editing Endpoints
-
-#### AI Edit Action
-```http
-POST /api/drafts/edit
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "draft_id": 1,
-  "action": "explain",  // explain, simplify, rephrase, add_citation
-  "selected_text": "...",
-  "context": "..."
-}
-```
-
-### Citation Endpoints
-
-#### Search Citations
-```http
-POST /api/citations/search
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "query": "fundamental rights",
-  "case_type": "constitutional",
-  "limit": 5
-}
-```
-
-### Document Export
-
-#### Export Draft
-```http
-POST /api/documents/export
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "draft_id": 1,
-  "format": "pdf",  // pdf or docx
-  "include_watermark": true
-}
-```
-
----
-
-## 🧪 Testing
-
-```bash
-# Backend tests
-cd backend
-pytest
-
-# Frontend tests
-cd frontend
-npm test
-```
-
----
-
-## 📁 Project Structure
+## Project Structure
 
 ```
 Lawmind/
 ├── backend/
 │   ├── app/
-│   │   ├── core/
-│   │   │   ├── config.py          # Configuration
-│   │   │   ├── database.py        # Database setup
-│   │   │   └── security.py        # Auth utilities
-│   │   ├── models/
-│   │   │   ├── database_models.py # SQLAlchemy models
-│   │   │   └── schemas.py         # Pydantic schemas
-│   │   ├── routers/
-│   │   │   ├── auth.py            # Auth endpoints
-│   │   │   ├── drafts.py          # Draft endpoints
-│   │   │   ├── citations.py       # Citation endpoints
-│   │   │   └── documents.py       # Export endpoints
+│   │   ├── core/          # Config, security, database
+│   │   ├── models/        # SQLAlchemy + Pydantic schemas
+│   │   ├── routers/       # FastAPI route handlers
 │   │   └── services/
-│   │       ├── ai_service.py      # LLM integration
-│   │       ├── rag_service.py     # RAG system
-│   │       └── citation_service.py # Citation logic
-│   ├── main.py                    # FastAPI app
+│   │       ├── ai_service.py      # Gemini 1.5 Flash integration
+│   │       ├── rag_service.py     # ChromaDB vector search
+│   │       ├── ocr_service.py     # Tesseract / EasyOCR
+│   │       └── citation_service.py
 │   ├── requirements.txt
-│   └── Dockerfile
-│
+│   └── .env.example
 ├── frontend/
-│   ├── public/
 │   ├── src/
-│   │   ├── components/
-│   │   │   └── Navbar.js
-│   │   ├── pages/
-│   │   │   ├── Login.js
-│   │   │   ├── Register.js
-│   │   │   ├── Dashboard.js
-│   │   │   ├── NewDraft.js
-│   │   │   └── DraftEditor.js
-│   │   ├── utils/
-│   │   │   └── api.js             # Axios instance
-│   │   ├── App.js
-│   │   └── index.js
-│   ├── package.json
-│   └── Dockerfile
-│
+│   │   ├── components/    # Sidebar, StatsRow, DraftsTable, QuickDraft …
+│   │   ├── pages/         # Dashboard, NewDraft, DraftEditor …
+│   │   ├── styles/        # theme.css — LawMind design tokens
+│   │   └── utils/         # api.js (Axios instance)
+│   └── package.json
 ├── docker-compose.yml
-├── .gitignore
-└── README.md
+├── .github/workflows/ci.yml
+└── LICENSE
 ```
 
 ---
 
-## 🛣️ Roadmap
+## GSoC Future Work
 
-### Phase 1 (Current)
-- ✅ AI-powered draft generation
-- ✅ Multi-document type support
-- ✅ Basic citation management
-- ✅ Export to PDF/DOCX
+LawMind is a strong GSoC candidate — it combines AI, legal accessibility, and Python
+infrastructure relevant to millions of Indian litigants and advocates.
 
-### Phase 2 (Upcoming)
-- 🔄 Voice input integration
-- 🔄 Advanced RAG with Indian law database
-- 🔄 Multi-language support (Hindi, Tamil, etc.)
-- 🔄 Collaborative editing
-
-### Phase 3 (Future)
-- 📅 Case management system
-- 📅 Client portal
-- 📅 E-filing integration
-- 📅 Mobile app (iOS/Android)
+1. **Fine-tune on Indian legal corpus** — IPC, CrPC, 50k+ judgements scraped from Indian Kanoon
+2. **Hindi & regional language support** — Generate drafts in Hindi, Tamil, Bengali via IndicTrans2
+3. **Live citation retrieval** — Real-time Indian Kanoon API integration replacing static ChromaDB seeds
+4. **Collaborative editing** — Multi-user real-time draft editing for law firms using Yjs / CRDTs
+5. **Voice-to-draft** — Dictate case facts in any Indian language via Whisper / Bhashini API
+6. **E-filing integration** — Direct submission to eCourts portal via NJDG API
+7. **Document comparison** — Diff drafts against standard court templates
+8. **Offline PWA** — Works in courts with poor internet using local quantised Gemma 2B
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
-We welcome contributions! Please follow these steps:
+Pull requests are welcome!
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+1. Fork → create branch: `feat/your-feature` or `fix/bug-name`
+2. Python: follow PEP 8, add tests in `backend/tests/`
+3. React: follow ESLint config, keep components under `frontend/src/components/`
+4. Open PR with a clear description of what changed and why
 
 ---
 
-## 👥 Team
+## GitHub Topics
 
-- **Developer:** AnshXGrind
-- **Repository:** [github.com/AnshXGrind/Lawmind](https://github.com/AnshXGrind/Lawmind)
+Add these on the repository settings page:
 
----
-
-## 📞 Support
-
-For support, email: support@lawmind.ai or join our Slack channel.
+`legal-ai` · `rag` · `fastapi` · `react` · `gemini-api` · `indian-law`
+`document-generation` · `nlp` · `python` · `chromadb` · `gsoc` · `langchain`
 
 ---
 
-## 🙏 Acknowledgments
+## License
 
-- OpenAI for GPT models
-- LangChain community
-- Indian legal community for feedback
-- All contributors
-
----
-
-## ⚠️ Disclaimer
-
-LawMind is an AI assistant tool and should be used as an aid. Always review AI-generated content with a qualified legal professional before submission to court. LawMind does not provide legal advice.
-
----
-
-**Made with ❤️ for the Indian Legal Community**
+MIT © 2025 LawMind Contributors — see [LICENSE](LICENSE).

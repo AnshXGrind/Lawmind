@@ -2,23 +2,60 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Rivian-inspired Premium Design System */
+/* =====================================================
+   LawMind Design System — Legal SaaS Theme
+   ===================================================== */
 :root {
+  /* Core palette */
+  --ink:            #0a0a0f;
+  --paper:          #f5f0e8;
+  --parchment:      #ede8dc;
+  --gold:           #c9a84c;
+  --gold-light:     #e8c96a;
+  --crimson:        #8b1a1a;
+  --crimson-light:  #c0392b;
+  --slate:          #2c2c3e;
+  --muted:          #6b6b7b;
+
+  /* Backgrounds */
+  --bg-main:        #0d0d15;
+  --bg-sidebar:     #0f0a05;
+  --bg-card:        rgba(255,255,255,0.02);
+  --bg-card-hover:  rgba(201,168,76,0.03);
+
+  /* Borders & glows */
+  --border-subtle:  rgba(255,255,255,0.06);
+  --border-gold:    rgba(201,168,76,0.20);
+  --glow-gold:      rgba(201,168,76,0.15);
+
+  /* Typography */
+  --font-heading:   'Playfair Display', Georgia, serif;
+  --font-body:      'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-legal:     'Georgia', 'Times New Roman', serif;
+  --font-mono:      'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Semantic */
+  --success:   #48bb78;
+  --warning:   #ed8936;
+  --danger:    #fc8181;
+
+  /* Legacy aliases (keep existing Tailwind compat) */
   --primary: #0f0f0f;
   --secondary: #1a1a1a;
-  --accent: #d4af37;
-  --accent-hover: #f0c75e;
-  --background: #ffffff;
-  --text: #0f0f0f;
-  --text-secondary: #6b7280;
-  --border: #e5e7eb;
+  --accent: #c9a84c;
+  --accent-hover: #e8c96a;
+  --background: #0d0d15;
+  --text: #f5f0e8;
+  --text-secondary: #6b6b7b;
+  --border: rgba(255,255,255,0.06);
 }
 
+/* Dark mode — already dark by default */
 .dark {
-  --background: #0f0f0f;
-  --text: #ffffff;
-  --text-secondary: #9ca3af;
-  --border: #1f2937;
+  --background: #0d0d15;
+  --text: #f5f0e8;
+  --text-secondary: #6b6b7b;
+  --border: rgba(255,255,255,0.06);
 }
 
 * {
