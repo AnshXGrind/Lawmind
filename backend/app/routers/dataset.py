@@ -5,9 +5,7 @@ Endpoints to manage automated legal dataset updates
 
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
-from typing import Dict, List
 import os
-import json
 from datetime import datetime
 
 from app.core.database import get_db
@@ -85,7 +83,7 @@ async def get_dataset_stats(
             )
             collection = client.get_collection("indian_judgments")
             vector_count = collection.count()
-        except:
+        except Exception:
             vector_count = 0
         
         # Get PDF count

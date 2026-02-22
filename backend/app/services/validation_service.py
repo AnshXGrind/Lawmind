@@ -3,7 +3,7 @@ Smart Missing Info Detector
 Detects missing information and generates intelligent follow-up questions
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, List
 from pydantic import BaseModel
 
 

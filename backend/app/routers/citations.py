@@ -3,7 +3,6 @@ Citations router
 """
 
 from fastapi import APIRouter, Depends, HTTPException
-from typing import List
 
 from app.models.schemas import CitationSearch, CitationResponse, Citation
 from app.services.citation_service import citation_service

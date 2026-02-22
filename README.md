@@ -6,9 +6,13 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104-green?style=flat-square)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-18-blue?style=flat-square)](https://react.dev)
 [![Gemini](https://img.shields.io/badge/Gemini-1.5--Flash-orange?style=flat-square)](https://aistudio.google.com)
+[![ChromaDB](https://img.shields.io/badge/ChromaDB-Vector_DB-purple?style=flat-square)](https://trychroma.com)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
 [![GSoC](https://img.shields.io/badge/GSoC-Ready-red?style=flat-square)](#gsoc-future-work)
 [![CI](https://github.com/AnshXGrind/Lawmind/actions/workflows/ci.yml/badge.svg)](https://github.com/AnshXGrind/Lawmind/actions)
+[![HF Space](https://img.shields.io/badge/🤗%20Hugging%20Face-Live%20Demo-yellow?style=flat-square)](https://huggingface.co/spaces/velarixx/lawmind-backend)
+
+> 🚀 **Live API:** https://velarixx-lawmind-backend.hf.space/docs
 
 ---
 

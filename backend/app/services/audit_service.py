@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
 from enum import Enum
-import json
+
 
 class AuditAction(str, Enum):
     """Types of actions to audit"""

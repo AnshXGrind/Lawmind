@@ -6,11 +6,9 @@ Extracts case information from uploaded FIRs, chargesheets, and notes
 import re
 import os
 from typing import Dict, List, Optional, Tuple
-from datetime import datetime
 import pytesseract
 from PIL import Image
 import pdf2image
-from io import BytesIO
 
 # Make EasyOCR completely optional
 EASYOCR_AVAILABLE = False

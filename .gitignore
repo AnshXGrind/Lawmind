@@ -63,3 +63,7 @@ frontend/.env
 .pytest_cache/
 .coverage
 htmlcov/
+
+hf_space/
+
+hf_space/

@@ -4,9 +4,8 @@ Manages user roles, permissions, and access control for LawMind platform
 """
 
 from enum import Enum
-from typing import List, Optional, Dict, Any
+from typing import List, Dict, Any
 from sqlalchemy.orm import Session
-from datetime import datetime
 
 from app.models.database_models import User
 

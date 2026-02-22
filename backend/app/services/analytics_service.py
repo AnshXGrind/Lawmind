@@ -7,12 +7,10 @@ citation analysis, and AI-powered success predictions.
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional
-import json
+from typing import Dict, List, Any
 from collections import Counter
 
 from app.models.database_models import User, Draft
-from app.core.database import get_db
 
 class AnalyticsService:
     """

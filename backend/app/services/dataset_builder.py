@@ -44,8 +44,6 @@ class LegalDatasetBuilder:
             
             # Indian Kanoon API endpoint (requires API key)
             # For now, using mock data structure
-            judgments = []
-            
             # Mock data for demonstration
             # In production, replace with actual API call:
             # response = requests.get(
@@ -362,7 +360,7 @@ class LegalDatasetBuilder:
                 continue
         
         logger.info("=" * 50)
-        logger.info(f"Daily update complete!")
+        logger.info("Daily update complete!")
         logger.info(f"Processed: {processed_count} | Skipped: {skipped_count}")
         logger.info("=" * 50)
     

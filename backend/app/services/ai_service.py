@@ -3,10 +3,10 @@ AI Service for Legal Document Generation using Google Gemini
 """
 
 import os
-from typing import List, Dict, Optional
+from typing import List, Dict
 import google.generativeai as genai
 from app.core.config import settings
-from app.models.schemas import DraftRequest, CaseType, DocumentType, CourtLevel
+from app.models.schemas import DraftRequest
 
 # Configure Gemini with API key
 genai.configure(api_key=os.getenv("GEMINI_API_KEY", ""))

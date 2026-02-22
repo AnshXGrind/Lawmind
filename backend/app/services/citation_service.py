@@ -2,7 +2,7 @@
 Citation Service for finding and suggesting legal citations
 """
 
-from typing import List, Dict, Optional
+from typing import List, Optional
 from app.services.rag_service import rag_service
 from app.models.schemas import Citation, CaseType
 
@@ -47,14 +47,7 @@ class CitationService:
         limit: int = 5
     ) -> List[Citation]:
         """Search for relevant legal citations"""
-        
-        # Search in RAG service
-        rag_results = self.rag_service.search_case_laws(
-            query,
-            case_type=case_type.value if case_type else None,
-            k=limit
-        )
-        
+
         # Combine with sample citations (keyword matching)
         query_lower = query.lower()
         matching_citations = []
@@ -114,9 +107,6 @@ class CitationService:
     
     def suggest_citations_for_draft(self, draft_content: str, case_type: CaseType) -> List[Citation]:
         """Suggest relevant citations based on draft content"""
-        # Extract key phrases from draft (simplified approach)
-        words = draft_content.lower().split()
-        
         # Common legal terms to search for
         legal_terms = [
             "fundamental rights", "constitution", "contract", "tort",

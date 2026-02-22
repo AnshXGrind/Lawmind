@@ -1,0 +1,63 @@
+name: Deploy Backend to Hugging Face Spaces
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy-hf.yml"
+
+jobs:
+  deploy:
+    name: Sync backend → HF Space
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0        # full history for git operations
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install huggingface_hub CLI
+        run: pip install huggingface_hub[cli] --quiet
+
+      - name: Clone HF Space repo
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git config --global user.email "ci@lawmind.dev"
+          git config --global user.name "LawMind CI"
+          git clone https://velarixx:${HF_TOKEN}@huggingface.co/spaces/velarixx/lawmind-backend hf_deploy
+
+      - name: Sync backend files to HF Space
+        run: |
+          # Copy backend contents (not the wrapper dir) into HF Space root
+          rsync -av --delete \
+            --exclude='.git' \
+            --exclude='__pycache__' \
+            --exclude='*.pyc' \
+            --exclude='lawmind.db' \
+            --exclude='data/' \
+            --exclude='uploads/' \
+            --exclude='exports/' \
+            backend/ hf_deploy/
+
+      - name: Commit and push to HF
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          cd hf_deploy
+          git add -A
+          # Only commit if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes to sync — skipping push."
+          else
+            git commit -m "ci: sync backend from GitHub $(date -u '+%Y-%m-%d %H:%M UTC')"
+            git push https://velarixx:${HF_TOKEN}@huggingface.co/spaces/velarixx/lawmind-backend main
+            echo "✅ Deployed to https://huggingface.co/spaces/velarixx/lawmind-backend"
+          fi

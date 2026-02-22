@@ -5,7 +5,6 @@ Analyzes petition/draft quality and provides improvement suggestions
 
 import re
 from typing import Dict, List, Tuple
-from collections import Counter
 
 
 class QualityScorer:

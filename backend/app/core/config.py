@@ -2,11 +2,10 @@
 Configuration settings for LawMind Backend
 """
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List
-import os
-import json
 from pathlib import Path
+
 
 class Settings(BaseSettings):
     """Application settings"""
@@ -27,16 +26,19 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./lawmind.db"
     
     # CORS
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000"]
+    CORS_ORIGINS: List[str] = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "https://velarixx-lawmind-backend.hf.space",
+        "https://*.hf.space",
+    ]
     
-    # AI/LLM Settings
-    OPENAI_API_KEY: str = ""
-    ANTHROPIC_API_KEY: str = ""
-    HUGGINGFACE_API_KEY: str = ""
-    
+    # AI/LLM Settings (Gemini — free at aistudio.google.com)
+    GEMINI_API_KEY: str = ""
+
     # LLM Model Configuration
-    LLM_PROVIDER: str = "openai"  # openai, anthropic, huggingface, local
-    LLM_MODEL: str = "gpt-4"
+    LLM_MODEL: str = "gemini-1.5-flash"
     LLM_TEMPERATURE: float = 0.3
     LLM_MAX_TOKENS: int = 2000
     
@@ -56,9 +58,8 @@ class Settings(BaseSettings):
     # Document Processing
     EXPORT_DIR: str = "./exports"
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+
 
 settings = Settings()
 

@@ -3,9 +3,7 @@ Case Law Research Service
 Integrates with Indian Kanoon API for legal case search
 """
 
-import requests
 from typing import List, Dict, Optional
-from app.core.config import settings
 
 class CaseLawService:
     """Service for searching Indian case law"""
@@ -35,17 +33,8 @@ class CaseLawService:
             List of case law results with citations
         """
         try:
-            # Build search query
-            search_query = self._build_search_query(query, court, case_type)
-            
-            # Call Indian Kanoon API
-            # Note: This is a simplified version. In production, you'd need proper API authentication
-            params = {
-                'formInput': search_query,
-                'pagenum': 0
-            }
-            
             # For demo: Return mock data (replace with actual API call in production)
+            # Actual API call: search_query = self._build_search_query(query, court, case_type)
             return self._get_mock_cases(query, max_results, court)
             
             # Actual API call (uncomment when API key is available):
