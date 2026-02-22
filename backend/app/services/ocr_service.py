@@ -254,6 +254,34 @@ class CaseExtractor:
         return None
 
 
-# Singleton instance
-ocr_service = OCRService()
-case_extractor = CaseExtractor()
+# Lazy singleton instances
+_ocr_service_instance = None
+_case_extractor_instance = None
+
+
+def get_ocr_service() -> "OCRService":
+    global _ocr_service_instance
+    if _ocr_service_instance is None:
+        _ocr_service_instance = OCRService()
+    return _ocr_service_instance
+
+
+def get_case_extractor() -> "CaseExtractor":
+    global _case_extractor_instance
+    if _case_extractor_instance is None:
+        _case_extractor_instance = CaseExtractor()
+    return _case_extractor_instance
+
+
+class _LazyOCR:
+    def __getattr__(self, name):
+        return getattr(get_ocr_service(), name)
+
+
+class _LazyCaseExtractor:
+    def __getattr__(self, name):
+        return getattr(get_case_extractor(), name)
+
+
+ocr_service = _LazyOCR()
+case_extractor = _LazyCaseExtractor()
