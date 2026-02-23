@@ -4,27 +4,39 @@ import './App.css';
 
 // Components
 import Navbar from './components/Navbar';
+import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import DraftEditor from './pages/DraftEditor';
 import NewDraft from './pages/NewDraft';
 import UploadDocument from './pages/UploadDocument';
 
+// App-shell wrapper — Navbar only on inner pages
+function AppShell({ children }) {
+  return (
+    <div className="App min-h-screen bg-gray-50">
+      <Navbar />
+      {children}
+    </div>
+  );
+}
+
 function App() {
   return (
     <Router>
-      <div className="App min-h-screen bg-gray-50">
-        <Navbar />
-        
-        <Routes>
-          <Route path="/login" element={<Navigate to="/dashboard" />} />
-          <Route path="/register" element={<Navigate to="/dashboard" />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/draft/new" element={<NewDraft />} />
-          <Route path="/upload" element={<UploadDocument />} />
-          <Route path="/draft/:id" element={<DraftEditor />} />
-          <Route path="/" element={<Navigate to="/dashboard" />} />
-        </Routes>
-      </div>
+      <Routes>
+        {/* Landing — no Navbar (has its own) */}
+        <Route path="/" element={<Landing />} />
+
+        {/* Inner app — shared Navbar */}
+        <Route path="/dashboard" element={<AppShell><Dashboard /></AppShell>} />
+        <Route path="/draft/new" element={<AppShell><NewDraft /></AppShell>} />
+        <Route path="/upload" element={<AppShell><UploadDocument /></AppShell>} />
+        <Route path="/draft/:id" element={<AppShell><DraftEditor /></AppShell>} />
+
+        {/* Legacy auth routes → home */}
+        <Route path="/login" element={<Navigate to="/" />} />
+        <Route path="/register" element={<Navigate to="/" />} />
+      </Routes>
     </Router>
   );
 }
