@@ -27,11 +27,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Unauthorized - redirect to login
-      localStorage.removeItem('lawmind_token');
-      window.location.href = '/login';
-    }
+    // Auth disabled - ignore 401 errors, don't redirect to login
     return Promise.reject(error);
   }
 );
