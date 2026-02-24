@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const DOC_TYPES = [
-  { key: 'petition',  icon: '📜', name: 'Petition',  desc: 'Court filing' },
-  { key: 'contract',  icon: '📋', name: 'Contract',  desc: 'Agreements' },
-  { key: 'notice',    icon: '✉️',  name: 'Notice',    desc: 'Legal notice' },
-  { key: 'affidavit', icon: '🔏', name: 'Affidavit', desc: 'Sworn statement' },
+  { key: 'petition',  name: 'Petition',  desc: 'Court filing' },
+  { key: 'contract',  name: 'Contract',  desc: 'Agreements' },
+  { key: 'notice',    name: 'Notice',    desc: 'Legal notice' },
+  { key: 'affidavit', name: 'Affidavit', desc: 'Sworn statement' },
 ];
 
 const COURTS = [
@@ -27,108 +27,121 @@ const QuickDraft = () => {
   };
 
   return (
-    <div style={styles.card}>
-      {/* Decorative scale */}
-      <div style={styles.decor}>⚖</div>
+    <div style={Q.card}>
+      <div style={Q.title}>Quick Draft</div>
+      <div style={Q.sub}>Describe your case, AI does the rest</div>
 
-      <div style={styles.title}>✦ Quick Draft</div>
-      <div style={styles.sub}>Select type and describe your case</div>
-
-      {/* Doc type grid */}
-      <div style={styles.grid}>
+      {/* Doc type chips */}
+      <div style={Q.chipRow}>
         {DOC_TYPES.map((t) => (
-          <div
+          <button
             key={t.key}
-            style={{ ...styles.typeBtn, ...(docType === t.key ? styles.typeBtnActive : {}) }}
+            style={{ ...Q.chip, ...(docType === t.key ? Q.chipActive : {}) }}
             onClick={() => setDocType(t.key)}
           >
-            <div style={styles.typeIcon}>{t.icon}</div>
-            <div style={styles.typeName}>{t.name}</div>
-            <div style={styles.typeDesc}>{t.desc}</div>
-          </div>
+            {t.name}
+          </button>
         ))}
       </div>
 
-      {/* Brief textarea */}
+      {/* Brief */}
       <textarea
-        style={styles.input}
+        style={Q.textarea}
         rows={3}
-        placeholder="Describe your case briefly…&#10;e.g. Petition for stay of eviction against illegal demolition by local authority…"
+        placeholder="Describe your case briefly…"
         value={brief}
         onChange={(e) => setBrief(e.target.value)}
       />
 
-      {/* Court selector */}
-      <select
-        style={{ ...styles.input, cursor: 'pointer', marginBottom: 10 }}
-        value={court}
-        onChange={(e) => setCourt(e.target.value)}
-      >
-        <option value="">Select Court Level…</option>
+      {/* Court */}
+      <select style={Q.select} value={court} onChange={(e) => setCourt(e.target.value)}>
+        <option value="">Select court…</option>
         {COURTS.map((c) => <option key={c} value={c}>{c}</option>)}
       </select>
 
       <button
-        style={{ ...styles.genBtn, opacity: brief.trim() ? 1 : 0.5 }}
+        style={{ ...Q.genBtn, opacity: brief.trim() ? 1 : 0.45 }}
         onClick={handleGenerate}
         disabled={!brief.trim()}
       >
-        ✦ Generate Draft with AI
+        Generate with AI
       </button>
     </div>
   );
 };
 
-const styles = {
+const Q = {
   card: {
-    background: 'linear-gradient(135deg, rgba(139,26,26,0.15), rgba(201,168,76,0.08))',
-    border: '1px solid rgba(201,168,76,0.15)',
+    background: '#fff',
+    border: '1px solid #e8e8e4',
     borderRadius: 14,
-    padding: 22,
-    position: 'relative',
-    overflow: 'hidden',
+    padding: '24px',
+    fontFamily: "'DM Sans', sans-serif",
   },
-  decor: {
-    position: 'absolute', right: -20, bottom: -20,
-    fontSize: 80, opacity: 0.04, transform: 'rotate(-15deg)',
-    pointerEvents: 'none', userSelect: 'none',
+  title: {
+    fontFamily: "'Playfair Display', serif",
+    fontSize: 18, fontWeight: 400, color: '#111', marginBottom: 4,
   },
-  title: { fontFamily: 'var(--font-heading)', fontSize: 16, color: 'var(--paper)', marginBottom: 4 },
-  sub: { fontSize: 12, color: 'var(--muted)', marginBottom: 18 },
-  grid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 },
-  typeBtn: {
-    background: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: 8, padding: '10px 12px',
-    cursor: 'pointer', transition: 'all 0.2s', textAlign: 'left',
-    userSelect: 'none',
+  sub: { fontSize: 12, color: '#aaa', marginBottom: 18 },
+  chipRow: { display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 },
+  chip: {
+    padding: '5px 13px',
+    borderRadius: 100,
+    border: '1px solid #e0dfdb',
+    background: '#fff',
+    color: '#777',
+    fontSize: 12,
+    fontWeight: 400,
+    cursor: 'pointer',
+    fontFamily: "'DM Sans', sans-serif",
+    transition: 'all 0.15s',
   },
-  typeBtnActive: { background: 'rgba(201,168,76,0.08)', borderColor: 'rgba(201,168,76,0.2)' },
-  typeIcon: { fontSize: 16, marginBottom: 4 },
-  typeName: { fontSize: 12, fontWeight: 500, color: 'var(--paper)' },
-  typeDesc: { fontSize: 10, color: 'var(--muted)', marginTop: 1 },
-  input: {
+  chipActive: {
+    background: '#111',
+    color: '#fff',
+    borderColor: '#111',
+  },
+  textarea: {
     width: '100%',
-    background: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: 8,
-    padding: '10px 14px',
-    fontSize: 13, color: 'var(--paper)',
-    fontFamily: 'var(--font-body)',
-    resize: 'none', outline: 'none',
+    border: '1px solid #e8e8e4',
+    borderRadius: 10,
+    padding: '10px 13px',
+    fontSize: 13,
+    color: '#111',
+    fontFamily: "'DM Sans', sans-serif",
+    resize: 'none',
+    outline: 'none',
     marginBottom: 10,
-    transition: 'border-color 0.2s',
+    background: '#faf9f7',
+    lineHeight: 1.6,
+    boxSizing: 'border-box',
+  },
+  select: {
+    width: '100%',
+    border: '1px solid #e8e8e4',
+    borderRadius: 10,
+    padding: '9px 13px',
+    fontSize: 13,
+    color: '#111',
+    fontFamily: "'DM Sans', sans-serif",
+    background: '#faf9f7',
+    outline: 'none',
+    marginBottom: 14,
+    cursor: 'pointer',
+    boxSizing: 'border-box',
   },
   genBtn: {
     width: '100%',
-    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-    padding: '11px 16px',
-    background: 'linear-gradient(135deg, var(--gold), #a87c2a)',
-    color: 'var(--ink)',
-    border: 'none', borderRadius: 8,
-    fontSize: 13, fontWeight: 600,
-    cursor: 'pointer', fontFamily: 'var(--font-body)',
-    transition: 'all 0.2s',
+    padding: '11px',
+    borderRadius: 100,
+    background: '#111',
+    color: '#fff',
+    border: 'none',
+    fontSize: 13,
+    fontWeight: 500,
+    cursor: 'pointer',
+    fontFamily: "'DM Sans', sans-serif",
+    transition: 'opacity 0.2s',
   },
 };
 

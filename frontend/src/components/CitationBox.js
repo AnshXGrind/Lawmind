@@ -8,42 +8,61 @@ const DEFAULT_CITATIONS = [
 ];
 
 const CitationBox = ({ citations = DEFAULT_CITATIONS }) => (
-  <div style={styles.box}>
-    <div style={styles.title}>📚 Recently Used Citations</div>
-    {citations.map((c) => (
-      <div key={c.code} style={styles.item}>
-        <span style={styles.code}>{c.code}</span>
-        <span style={styles.name}>{c.name}</span>
-        <span style={styles.year}>{c.year}</span>
-      </div>
-    ))}
+  <div style={C.box}>
+    <div style={C.title}>Recently Used Citations</div>
+    <table style={C.table}>
+      <tbody>
+        {citations.map((c) => (
+          <tr key={c.code} style={C.row}>
+            <td style={C.code}>{c.code}</td>
+            <td style={C.name}>{c.name}</td>
+            <td style={C.year}>{c.year}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   </div>
 );
 
-const styles = {
+const C = {
   box: {
-    background: 'rgba(139,26,26,0.08)',
-    border: '1px solid rgba(139,26,26,0.20)',
-    borderRadius: 10,
-    padding: '14px 16px',
+    background: '#fff',
+    border: '1px solid #e8e8e4',
+    borderRadius: 14,
+    padding: '20px 24px',
+    fontFamily: "'DM Sans', sans-serif",
   },
   title: {
-    fontSize: 11, fontWeight: 600, color: '#fc8181',
-    marginBottom: 8, letterSpacing: '0.05em', textTransform: 'uppercase',
+    fontFamily: "'Playfair Display', serif",
+    fontSize: 16,
+    fontWeight: 400,
+    color: '#111',
+    marginBottom: 16,
   },
-  item: {
-    display: 'flex', alignItems: 'center', gap: 8,
-    padding: '6px 0',
-    borderBottom: '1px solid rgba(139,26,26,0.10)',
-    fontSize: 12,
-  },
+  table: { width: '100%', borderCollapse: 'collapse' },
+  row: { borderBottom: '1px solid #f4f3f0' },
   code: {
-    fontFamily: 'var(--font-mono)',
-    fontSize: 10, color: '#fc8181', fontWeight: 500,
-    flexShrink: 0, minWidth: 72,
+    padding: '10px 16px 10px 0',
+    fontSize: 11,
+    fontFamily: "'DM Mono', 'Courier New', monospace",
+    fontWeight: 600,
+    color: '#555',
+    whiteSpace: 'nowrap',
+    width: 80,
   },
-  name: { color: 'rgba(245,240,232,0.70)', flex: 1 },
-  year: { color: 'var(--muted)', fontSize: 11, flexShrink: 0 },
+  name: {
+    padding: '10px 12px',
+    fontSize: 12.5,
+    color: '#444',
+    lineHeight: 1.4,
+  },
+  year: {
+    padding: '10px 0',
+    fontSize: 11,
+    color: '#bbb',
+    textAlign: 'right',
+    whiteSpace: 'nowrap',
+  },
 };
 
 export default CitationBox;

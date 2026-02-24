@@ -15,7 +15,7 @@ import LegalChat from './components/ai/LegalChat';
 // App-shell wrapper — Navbar only on inner pages
 function AppShell({ children }) {
   return (
-    <div className="App min-h-screen bg-gray-50">
+    <div style={{ minHeight: '100vh', background: '#f8f7f5', fontFamily: "'DM Sans', sans-serif" }}>
       <Navbar />
       {children}
     </div>

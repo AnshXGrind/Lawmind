@@ -1,60 +1,78 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Home, PlusCircle, Moon, Sun } from 'lucide-react';
-import Logo from './Logo';
-import { useTheme } from '../contexts/ThemeContext';
 
-const Navbar = () => {
-  const { isDark, toggleTheme } = useTheme();
+const Navbar = () => (
+  <nav style={N.nav}>
+    <div style={N.inner}>
+      {/* Logo */}
+      <Link to="/dashboard" style={N.logoLink}>
+        <span style={N.logoMark}>⚖</span>
+        <span style={N.logoText}>LawMind</span>
+      </Link>
 
-  return (
-    <nav className="bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 sticky top-0 z-50 transition-colors duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link to="/dashboard" className="group flex items-center space-x-3">
-            <Logo size="medium" />
-          </Link>
-
-          {/* Navigation Links */}
-          <div className="hidden md:flex items-center space-x-3">
-            <Link
-              to="/dashboard"
-              className="flex items-center space-x-2 px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white rounded-lg transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              <Home className="w-4 h-4" />
-              <span className="font-medium text-sm">Dashboard</span>
-            </Link>
-            
-            <Link
-              to="/draft/new"
-              className="flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 transition-all duration-200"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span className="text-sm">New Draft</span>
-            </Link>
-          </div>
-
-          {/* User Menu */}
-          <div className="flex items-center space-x-2">
-            {/* Dark Mode Toggle */}
-            <button
-              onClick={toggleTheme}
-              className="p-2.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 border border-gray-200 dark:border-gray-700"
-              title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-              aria-label="Toggle theme"
-            >
-              {isDark ? (
-                <Sun className="w-5 h-5 text-amber-400" />
-              ) : (
-                <Moon className="w-5 h-5 text-gray-600" />
-              )}
-            </button>
-          </div>
-        </div>
+      {/* Actions */}
+      <div style={N.actions}>
+        <Link to="/analyse" style={N.ghostLink}>Analyse Doc</Link>
+        <Link to="/upload" style={N.ghostLink}>Upload</Link>
+        <Link to="/draft/new" style={N.primaryLink}>+ New Draft</Link>
       </div>
-    </nav>
-  );
+    </div>
+  </nav>
+);
+
+const N = {
+  nav: {
+    background: '#fff',
+    borderBottom: '1px solid #e8e8e4',
+    position: 'sticky',
+    top: 0,
+    zIndex: 50,
+    fontFamily: "'DM Sans', sans-serif",
+  },
+  inner: {
+    maxWidth: 1280,
+    margin: '0 auto',
+    padding: '0 32px',
+    height: 56,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  logoLink: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    textDecoration: 'none',
+  },
+  logoMark: { fontSize: 18, color: '#111' },
+  logoText: {
+    fontFamily: "'Playfair Display', serif",
+    fontSize: 17,
+    fontWeight: 400,
+    color: '#111',
+    letterSpacing: '0.01em',
+  },
+  actions: { display: 'flex', alignItems: 'center', gap: 6 },
+  ghostLink: {
+    padding: '6px 14px',
+    borderRadius: 100,
+    border: '1px solid #e0dfdb',
+    color: '#666',
+    fontSize: 13,
+    textDecoration: 'none',
+    fontFamily: "'DM Sans', sans-serif",
+    transition: 'border-color 0.15s',
+  },
+  primaryLink: {
+    padding: '7px 16px',
+    borderRadius: 100,
+    background: '#111',
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: 500,
+    textDecoration: 'none',
+    fontFamily: "'DM Sans', sans-serif",
+  },
 };
 
 export default Navbar;

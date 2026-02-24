@@ -8,6 +8,29 @@ import QuickDraft from '../components/QuickDraft';
 import AISuggestions from '../components/AISuggestions';
 import CitationBox from '../components/CitationBox';
 
+const D = {
+  app:     { display: 'flex', minHeight: '100vh', background: '#f8f7f5', fontFamily: "'DM Sans', sans-serif" },
+  main:    { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#f8f7f5' },
+  topbar:  { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 40px', borderBottom: '1px solid #e8e8e4', background: '#f8f7f5', flexShrink: 0 },
+  pageTitle: { fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 400, color: '#111', letterSpacing: '-0.01em' },
+  pageSub: { fontSize: 13, color: '#999', marginTop: 2 },
+  topActions: { display: 'flex', alignItems: 'center', gap: 10 },
+  btnPrimary: { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px', borderRadius: 100, background: '#111', color: '#fff', border: 'none', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", transition: 'opacity 0.2s' },
+  btnGhost:  { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 100, background: 'transparent', color: '#555', border: '1px solid #ddd', fontSize: 13, fontWeight: 400, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" },
+  content: { padding: '36px 40px', overflowY: 'auto', flex: 1 },
+  grid:    { display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24, marginTop: 28 },
+  leftCol: { display: 'flex', flexDirection: 'column', gap: 24 },
+  rightCol: { display: 'flex', flexDirection: 'column', gap: 20 },
+  loadWrap: { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#f8f7f5' },
+  comingSection: { paddingTop: 4 },
+  comingHeading: { fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 400, color: '#111', marginBottom: 14 },
+  comingGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 },
+  comingCard: { background: '#fff', border: '1px solid #e8e8e4', borderRadius: 14, padding: '18px 20px' },
+  comingTitle: { fontSize: 13.5, fontWeight: 500, color: '#111', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 },
+  soonBadge: { fontSize: 9, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#999', background: '#f4f3f0', padding: '2px 7px', borderRadius: 100 },
+  comingDesc: { fontSize: 12, color: '#aaa', lineHeight: 1.5 },
+};
+
 const Dashboard = () => {
   const [drafts, setDrafts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -52,59 +75,63 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div style={styles.loadWrap}>
-        <div style={styles.loadDot} />
-        <span style={{ color: 'var(--muted)', fontSize: 14, marginLeft: 10 }}>
-          Loading workspace…
-        </span>
+      <div style={D.loadWrap}>
+        <span style={{ color: '#999', fontSize: 14 }}>Loading workspace…</span>
       </div>
     );
   }
 
   return (
-    <div style={styles.app}>
+    <div style={D.app}>
       <Sidebar user={user} />
 
-      <main style={styles.main}>
+      <main style={D.main}>
         {/* Top bar */}
-        <div style={styles.topbar}>
+        <div style={D.topbar}>
           <div>
-            <div style={styles.pageTitle}>
-              {greeting}, {displayName} ⚖️
-            </div>
-            <div style={styles.pageSub}>
+            <div style={D.pageTitle}>{greeting}, {displayName}</div>
+            <div style={D.pageSub}>
               {inProgress > 0
-                ? `You have ${inProgress} draft${inProgress > 1 ? 's' : ''} in progress`
+                ? `${inProgress} draft${inProgress > 1 ? 's' : ''} in progress`
                 : 'All drafts up to date'}
-              {' · '}
-              {dateStr}
+              {' · '}{dateStr}
             </div>
           </div>
-          <div style={styles.topActions}>
-            <button style={styles.btnGhost} onClick={() => navigate('/upload')}>
-              ⊕ Upload
-            </button>
-            <button style={styles.btnPrimary} onClick={() => navigate('/draft/new')}>
-              ✦ New Draft
-            </button>
+          <div style={D.topActions}>
+            <button style={D.btnGhost} onClick={() => navigate('/upload')}>Upload</button>
+            <button style={D.btnPrimary} onClick={() => navigate('/draft/new')}>+ New Draft</button>
           </div>
         </div>
 
         {/* Scrollable content */}
-        <div style={styles.content}>
+        <div style={D.content} className="dash-fade">
           <StatsRow drafts={drafts} />
 
-          <div style={styles.grid}>
-            {/* Left column */}
-            <div style={styles.leftCol}>
+          <div style={D.grid}>
+            <div style={D.leftCol}>
               <DraftsTable drafts={drafts} onDelete={handleDelete} />
-              <div style={{ marginTop: 18 }}>
-                <CitationBox />
+              <CitationBox />
+              {/* Coming Next feature cards */}
+              <div style={D.comingSection}>
+                <div style={D.comingHeading}>Coming Next</div>
+                <div style={D.comingGrid}>
+                  {[
+                    { title: 'OCR Upload',      desc: 'Scan physical documents with AI-powered text extraction' },
+                    { title: 'Live Citations',   desc: 'Real-time IPC / CrPC section lookup while you draft' },
+                    { title: 'Multi-user Sync',  desc: 'Collaborate on drafts with your team in real time' },
+                  ].map((f) => (
+                    <div key={f.title} style={D.comingCard}>
+                      <div style={D.comingTitle}>
+                        {f.title}
+                        <span style={D.soonBadge}>Soon</span>
+                      </div>
+                      <div style={D.comingDesc}>{f.desc}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-
-            {/* Right column */}
-            <div style={styles.rightCol}>
+            <div style={D.rightCol}>
               <QuickDraft />
               <AISuggestions />
             </div>
@@ -113,76 +140,6 @@ const Dashboard = () => {
       </main>
     </div>
   );
-};
-
-const styles = {
-  app: {
-    display: 'flex',
-    minHeight: '100vh',
-    background: 'var(--bg-main)',
-    fontFamily: 'var(--font-body)',
-    color: 'var(--paper)',
-  },
-  main: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-    background: '#0d0d15',
-  },
-  topbar: {
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '16px 32px',
-    borderBottom: '1px solid rgba(255,255,255,0.05)',
-    background: 'rgba(13,13,21,0.8)',
-    backdropFilter: 'blur(10px)',
-    flexShrink: 0,
-  },
-  pageTitle: {
-    fontFamily: 'var(--font-heading)',
-    fontSize: 22, fontWeight: 600,
-    color: 'var(--paper)',
-  },
-  pageSub: { fontSize: 12, color: 'var(--muted)', marginTop: 1 },
-  topActions: { display: 'flex', alignItems: 'center', gap: 10 },
-  btnPrimary: {
-    display: 'inline-flex', alignItems: 'center', gap: 6,
-    padding: '8px 16px', borderRadius: 8,
-    background: 'linear-gradient(135deg, var(--gold), #a87c2a)',
-    color: 'var(--ink)', border: 'none',
-    fontSize: 13, fontWeight: 600, cursor: 'pointer',
-    fontFamily: 'var(--font-body)',
-  },
-  btnGhost: {
-    display: 'inline-flex', alignItems: 'center', gap: 6,
-    padding: '8px 16px', borderRadius: 8,
-    background: 'rgba(255,255,255,0.05)',
-    color: 'var(--paper)',
-    border: '1px solid rgba(255,255,255,0.08)',
-    fontSize: 13, fontWeight: 500, cursor: 'pointer',
-    fontFamily: 'var(--font-body)',
-  },
-  content: {
-    padding: '28px 32px',
-    overflowY: 'auto',
-    flex: 1,
-  },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 340px',
-    gap: 20,
-  },
-  leftCol: { display: 'flex', flexDirection: 'column' },
-  rightCol: { display: 'flex', flexDirection: 'column', gap: 18 },
-  loadWrap: {
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    minHeight: '100vh', background: '#0d0d15',
-  },
-  loadDot: {
-    width: 8, height: 8, borderRadius: '50%',
-    background: 'var(--gold)',
-    animation: 'lm-pulse 1.2s infinite',
-  },
 };
 
 export default Dashboard;
