@@ -4,6 +4,10 @@ import { Save, Download, Lightbulb, BookOpen, Copy, FileDown, Check, Scale, Exte
 import { jsPDF } from 'jspdf';
 import api from '../utils/api';
 import QualityScoreDashboard from '../components/QualityScoreDashboard';
+import ClientLetterGenerator from '../components/ai/ClientLetterGenerator';
+import ToneChecker from '../components/ai/ToneChecker';
+import PrecedentExplainer from '../components/ai/PrecedentExplainer';
+import CounterArgumentGenerator from '../components/ai/CounterArgumentGenerator';
 
 const DraftEditor = () => {
   const { id } = useParams();
@@ -351,6 +355,25 @@ const DraftEditor = () => {
                   </>
                 )}
               </button>
+
+              {/* AI Toolbar Buttons */}
+              <ClientLetterGenerator
+                content={content}
+                caseType={draft?.case_type}
+              />
+              <ToneChecker
+                content={content}
+                selectedText={selectedText}
+                onReplace={(text) => setContent(text)}
+              />
+              <PrecedentExplainer
+                caseType={draft?.case_type}
+                onInsert={(block) => setContent(prev => prev + '\n\n' + block)}
+              />
+              <CounterArgumentGenerator
+                content={content}
+                onAddToDraft={(block) => setContent(prev => prev + '\n\n' + block)}
+              />
 
               <button
                 onClick={() => handleAiAction('improve')}
