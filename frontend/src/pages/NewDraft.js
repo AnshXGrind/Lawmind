@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import ValidationModal from '../components/ValidationModal';
@@ -9,12 +9,7 @@ const NewDraft = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [isRecording, setIsRecording] = useState(false);
-  const [sectionSuggestions, setSectionSuggestions] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [selectedSections, setSelectedSections] = useState([]);
-  const suggestionsRef = useRef(null);
   const [showValidation, setShowValidation] = useState(false);
   const [courtSearch, setCourtSearch] = useState('');
   const [showCourtDropdown, setShowCourtDropdown] = useState(false);
@@ -97,31 +92,12 @@ const NewDraft = () => {
     if (!selectedSections.find(s => s.section === section.section)) {
       setSelectedSections([...selectedSections, section]);
     }
-    setShowSuggestions(false);
   };
   
   const removeSection = (sectionToRemove) => {
     setSelectedSections(selectedSections.filter(s => s.section !== sectionToRemove.section));
   };
   
-  // Close suggestions when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target)) {
-        setShowSuggestions(false);
-      }
-    };
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleVoiceInput = () => {
-    // TODO: Implement voice input using Web Speech API or similar
-    setIsRecording(!isRecording);
-    alert('Voice input feature coming soon!');
-  };
-
   const handleSubmit = async (e, skipValidation = false) => {
     e.preventDefault();
     

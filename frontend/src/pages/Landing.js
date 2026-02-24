@@ -216,9 +216,9 @@ export default function Landing() {
       <footer className="lm-footer">
         <span className="lm-footer-logo">Law<em>Mind</em></span>
         <div className="lm-footer-links">
-          <a href="#">Privacy</a>
-          <a href="#">Terms</a>
-          <a href="#">Contact</a>
+          <a href="/">Privacy</a>
+          <a href="/">Terms</a>
+          <a href="/">Contact</a>
         </div>
         <div>© 2026 LawMind</div>
       </footer>

@@ -30,7 +30,7 @@ const S = {
     transform: 'translateX(-50%)',
     background: '#111', color: '#fff', borderRadius: 8,
     padding: '6px 10px', fontSize: 11, lineHeight: 1.5,
-    whiteSpace: 'nowrap', maxWidth: 220, whiteSpace: 'normal',
+    whiteSpace: 'normal', maxWidth: 220,
     zIndex: 99, pointerEvents: 'none',
     boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
   },
@@ -62,7 +62,7 @@ export default function SectionSuggester({ caseType, documentType, facts, onSele
     const prompt = `For a ${documentType} in a ${caseType} case with these facts: ${facts} — list exactly 6 applicable Indian legal sections. Format each as: SECTION_NAME | ACT | ONE_LINE_DESCRIPTION. Only output the 6 lines, nothing else.`;
     const res = await ask(prompt);
     if (!res) return;
-    const lines = res.split('\n').map((l) => l.replace(/^\d+[\.\)]\s*/, '').trim()).filter(Boolean).slice(0, 6);
+    const lines = res.split('\n').map((l) => l.replace(/^\d+[.)]\s*/, '').trim()).filter(Boolean).slice(0, 6);
     setSuggestions(lines.map(parseSection));
   };
 
