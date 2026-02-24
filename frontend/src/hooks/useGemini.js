@@ -1,8 +1,7 @@
 import { useState } from 'react';
 
-// ─── Paste your Gemini API key here ───────────────────────
-const GEMINI_KEY = 'YOUR_GEMINI_API_KEY';
-// ──────────────────────────────────────────────────────────
+// Reads from REACT_APP_GEMINI_API_KEY env var (set in Vercel / .env.local)
+const GEMINI_KEY = process.env.REACT_APP_GEMINI_API_KEY || '';
 
 const SYSTEM_PERSONA =
   'You are LawMind, a professional Indian legal assistant with deep expertise in IPC, CrPC, CPC, Hindu Marriage Act, Companies Act, and Constitution of India. Always respond in formal legal language with relevant section references.';
