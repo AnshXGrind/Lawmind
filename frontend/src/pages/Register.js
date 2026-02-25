@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Scale, Building2, Mail, Lock, User, CheckCircle } from 'lucide-react';
-import { setUser } from '../utils/storage';
+import api from '../utils/api';
 
 const Register = ({ onRegister }) => {
   const [formData, setFormData] = useState({
@@ -22,7 +22,7 @@ const Register = ({ onRegister }) => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -31,14 +31,21 @@ const Register = ({ onRegister }) => {
       return;
     }
 
-    const user = {
-      id: 'user_1',
-      email: formData.email,
-      full_name: formData.full_name,
-      organization: formData.organization || '',
-    };
-    setUser(user);
-    navigate('/dashboard');
+    setLoading(true);
+    try {
+      const response = await api.post('/auth/register', {
+        email: formData.email,
+        password: formData.password,
+        full_name: formData.full_name,
+        organization: formData.organization || '',
+      });
+      localStorage.setItem('lawmind_token', response.data.access_token || 'registered');
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

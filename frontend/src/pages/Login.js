@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Scale, Shield, Award, Sparkles } from 'lucide-react';
-import { setUser } from '../utils/storage';
+import api from '../utils/api';
 
 const Login = ({ onLogin }) => {
   const [email, setEmail] = useState('');
@@ -10,17 +10,24 @@ const Login = ({ onLogin }) => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    const user = {
-      id: 'user_1',
-      email,
-      full_name: email.split('@')[0],
-      organization: '',
-    };
-    setUser(user);
-    navigate('/dashboard');
+    setLoading(true);
+    try {
+      const formPayload = new FormData();
+      formPayload.append('username', email);
+      formPayload.append('password', password);
+      const response = await api.post('/auth/login', formPayload, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      });
+      localStorage.setItem('lawmind_token', response.data.access_token);
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

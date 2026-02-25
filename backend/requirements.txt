@@ -1,51 +1,21 @@
-# Backend Dependencies
-fastapi>=0.100.0
-uvicorn[standard]>=0.23.0
-python-multipart>=0.0.6
-
-# Database
-sqlalchemy>=2.0.0
-alembic>=1.12.0
-
-# Authentication & Security
-python-jose[cryptography]>=3.3.0
-passlib[bcrypt]>=1.7.4
-python-dotenv>=1.0.0
-pydantic-settings>=2.0.0
-
-# AI/ML Libraries
-google-generativeai>=0.7.0
-chromadb>=0.4.22
-sentence-transformers>=2.2.2
-
-# Document Processing & OCR
-python-docx>=1.0.0
-reportlab>=4.0.0
-PyPDF2>=3.0.0
-pytesseract>=0.3.10
-pdf2image>=1.16.3
-Pillow>=10.0.0
-easyocr>=1.7.0
-
-# NLP & Text Processing
-spacy>=3.7.0
-nltk>=3.8.0
-language-tool-python>=2.7.1
-
-# Translation
-deep-translator>=1.11.4
-
-# Email
-email-validator>=2.0.0
-
-# Utilities
-httpx>=0.25.0
-pydantic>=2.0.0
-regex>=2023.10.0
-python-dateutil>=2.8.2
-
-# Encryption & Security
-cryptography>=41.0.0
-
-# Search & Indexing
-whoosh>=2.7.4
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+sqlalchemy==2.0.23
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+cryptography==41.0.5
+pydantic==2.5.2
+pydantic-settings==2.1.0
+python-dotenv==1.0.0
+email-validator==2.1.0
+google-generativeai==0.3.2
+python-docx==1.1.0
+reportlab==4.0.8
+PyPDF2==3.0.1
+pytesseract==0.3.10
+Pillow==10.1.0
+pdf2image==1.16.3
+httpx==0.25.2
+aiofiles==23.2.1
+python-dateutil==2.8.2

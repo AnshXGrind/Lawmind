@@ -1,227 +1,137 @@
-﻿"""
-AI Service for Legal Document Generation using Google Gemini
-"""
+"""AI Service - Google Gemini (lazy init)"""
 
-import os
+import os, logging
 from typing import List, Dict
 import google.generativeai as genai
 from app.core.config import settings
 from app.models.schemas import DraftRequest
 
-# Configure Gemini with API key
-genai.configure(api_key=os.getenv("GEMINI_API_KEY", ""))
+logger = logging.getLogger(__name__)
 
-_SYSTEM_PROMPT = """You are LawMind, a professional Indian legal drafting assistant with deep expertise in Indian law.
-You generate legally formatted documents that follow proper court procedures and formatting standards.
-Your drafts are precise, professionally structured, and include relevant legal references to the IPC, CrPC, CPC,
-and other applicable Indian statutes. Always use formal legal language unless asked otherwise."""
+_SYSTEM_PROMPT = """You are LawMind, a senior Indian legal drafting expert with 20+ years of court experience.
+Expertise: IPC, CrPC, CPC, Indian Evidence Act, Constitution, Hindu Marriage Act, Companies Act 2013, Contract Act 1872.
+ALWAYS:
+- Use proper Indian court headings (IN THE HON'BLE HIGH COURT OF...)
+- Number all paragraphs
+- Include PRAYER / RELIEF SOUGHT section
+- Add VERIFICATION clause
+- Use formal language: "It is respectfully submitted...", "The Hon'ble Court may be pleased to..."
+- Produce COMPLETE documents, not outlines."""
 
 
 class LegalDraftingAI:
-    """AI service for generating legal documents via Google Gemini"""
-
     def __init__(self):
-        self.model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
-            system_instruction=_SYSTEM_PROMPT,
-            generation_config=genai.GenerationConfig(
-                temperature=getattr(settings, "LLM_TEMPERATURE", 0.3),
-                max_output_tokens=getattr(settings, "LLM_MAX_TOKENS", 2000),
-            ),
-        )
+        self._model = None
+
+    @property
+    def model(self):
+        if self._model is None:
+            key = os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY
+            if not key:
+                raise ValueError("GEMINI_API_KEY is not set. Add it to Replit Secrets.")
+            genai.configure(api_key=key)
+            self._model = genai.GenerativeModel(
+                model_name="gemini-1.5-flash",
+                system_instruction=_SYSTEM_PROMPT,
+                generation_config=genai.GenerationConfig(
+                    temperature=0.2, max_output_tokens=4096
+                ),
+            )
+        return self._model
 
     def _generate(self, prompt: str) -> str:
-        """Internal helper — call Gemini and return text."""
-        response = self.model.generate_content(prompt)
-        return response.text
+        try:
+            return self.model.generate_content(prompt).text
+        except Exception as e:
+            logger.error(f"Gemini error: {e}")
+            raise ValueError(f"AI generation failed: {e}")
 
     def generate_draft(self, request: DraftRequest) -> str:
-        """Generate a full legal draft based on the request."""
-        parties_text = "\n".join(
-            [f"{role}: {name}" for role, name in request.parties.items()]
-        ) or "To be filled"
-        sections_text = (
-            ", ".join(request.sections) if request.sections else "To be determined"
-        )
+        parties = "\n".join(f"{r.upper()}: {n}" for r, n in request.parties.items()) or "Parties: TBD"
+        sections = ", ".join(request.sections) if request.sections else "To be determined"
+        return self._generate(f"""Draft a COMPLETE, court-ready {request.document_type.value.upper()} for {request.court}.
 
-        prompt = f"""Generate a legally formatted {request.document_type.value} for {request.court.value.replace("_", " ").title()} with the following details:
+PARTIES: {parties}
+CASE TYPE: {request.case_type.value.upper()}
+TITLE: {request.title}
+FACTS: {request.facts}
+LEGAL PROVISIONS: {sections}
+RELIEF SOUGHT: {request.relief_sought or "Appropriate relief as the court deems fit"}
+TONE: {request.tone.value}
+{f"CONTEXT: {request.additional_context}" if request.additional_context else ""}
 
-**Case Type:** {request.case_type.value}
-**Title:** {request.title}
-
-**Parties Involved:**
-{parties_text}
-
-**Facts of the Case:**
-{request.facts}
-
-**Applicable Legal Provisions:**
-{sections_text}
-
-**Relief Sought:**
-{request.relief_sought or "To be specified"}
-
-**Tone Required:** {request.tone.value}
-
-**Additional Context:**
-{request.additional_context or "None provided"}
-
-Please generate a complete, professionally formatted {request.document_type.value} following Indian legal standards. Include:
-1. Proper heading and case title
-2. Parties designation
-3. Factual background
-4. Legal arguments with section references
-5. Relief/Prayer section
-6. Verification clause (if applicable)
-
-Ensure the language is {request.tone.value}, legally precise, and follows court formatting conventions."""
-
-        return self._generate(prompt)
+Generate ALL sections:
+1. COURT HEADING  2. PARTIES BLOCK  3. INTRODUCTION
+4. FACTS (min 5 numbered paragraphs)
+5. GROUNDS (min 5 numbered with section references)
+6. PRAYER (numbered specific reliefs)
+7. VERIFICATION CLAUSE  8. Counsel signature block
+This must be ready to file in court.""")
 
     def explain_section(self, text: str) -> str:
-        """Explain a legal text section in plain language."""
-        prompt = f"""As a legal expert, explain the following legal text in simple, clear language:
-
-Text: {text}
-
-Provide a concise explanation that a non-lawyer could understand, while maintaining legal accuracy."""
-        return self._generate(prompt)
+        return self._generate(f"Explain this legal text in plain English (under 150 words):\n\n{text}")
 
     def simplify_tone(self, text: str) -> str:
-        """Simplify legal text while maintaining meaning."""
-        prompt = f"""Rewrite the following legal text in simpler, more accessible language while maintaining legal accuracy:
-
-Original: {text}
-
-Simplified version:"""
-        return self._generate(prompt)
+        return self._generate(f"Simplify this legal text while keeping accuracy:\n\n{text}")
 
     def rephrase_legally(self, text: str, context: str = "") -> str:
-        """Rephrase text in more formal legal language."""
-        prompt = f"""Rephrase the following text in formal, professional legal language suitable for Indian court documents:
-
-Text: {text}
-Context: {context}
-
-Legally rephrased version:"""
-        return self._generate(prompt)
+        return self._generate(f"Rephrase in formal Indian legal language:\n\nText: {text}\nContext: {context}")
 
     def suggest_improvements(self, draft: str) -> List[str]:
-        """Suggest improvements for a legal draft."""
-        prompt = f"""Review the following legal draft and suggest 3-5 specific improvements:
+        result = self._generate(f"Give 5 numbered improvement suggestions for this draft:\n\n{draft[:2000]}")
+        return [s.strip() for s in result.split("\n") if s.strip() and s.strip()[0].isdigit()][:5]
 
-Draft:
-{draft}
-
-Provide numbered suggestions for improvement:"""
-        result = self._generate(prompt)
-        suggestions = [
-            s.strip()
-            for s in result.split("\n")
-            if s.strip() and s.strip()[0].isdigit()
-        ]
-        return suggestions
-
-    def suggest_legal_sections(
-        self, document_type: str, case_type: str, facts: str = ""
-    ) -> List[Dict[str, str]]:
-        """Suggest applicable legal sections based on case details."""
-        section_database = {
-            "civil": {
-                "petition": [
-                    {"section": "Order VII Rule 11 CPC", "description": "Rejection of plaint", "act": "Code of Civil Procedure, 1908"},
-                    {"section": "Section 9 CPC", "description": "Courts to try all civil suits", "act": "Code of Civil Procedure, 1908"},
-                    {"section": "Order I Rule 10 CPC", "description": "Procedure for impleadment of parties", "act": "Code of Civil Procedure, 1908"},
-                ],
-                "contract": [
-                    {"section": "Section 10 Contract Act", "description": "What agreements are contracts", "act": "Indian Contract Act, 1872"},
-                    {"section": "Section 73 Contract Act", "description": "Compensation for breach", "act": "Indian Contract Act, 1872"},
-                    {"section": "Section 75 Contract Act", "description": "Compensation on rescission", "act": "Indian Contract Act, 1872"},
-                ],
-                "property": [
-                    {"section": "Section 54 Transfer of Property Act", "description": "Sale defined", "act": "Transfer of Property Act, 1882"},
-                    {"section": "Section 17 Registration Act", "description": "Compulsory registration", "act": "Registration Act, 1908"},
-                ],
-            },
+    def suggest_legal_sections(self, document_type: str, case_type: str, facts: str = "") -> List[Dict]:
+        db = {
             "criminal": {
                 "petition": [
-                    {"section": "Section 438 CrPC", "description": "Anticipatory Bail", "act": "Code of Criminal Procedure, 1973"},
-                    {"section": "Section 482 CrPC", "description": "Inherent powers of High Court", "act": "Code of Criminal Procedure, 1973"},
-                    {"section": "Section 154 CrPC", "description": "FIR in cognizable cases", "act": "Code of Criminal Procedure, 1973"},
+                    {"section": "Section 438 CrPC", "description": "Anticipatory Bail", "act": "CrPC 1973"},
+                    {"section": "Section 482 CrPC", "description": "Inherent powers of High Court", "act": "CrPC 1973"},
+                    {"section": "Section 154 CrPC", "description": "FIR registration", "act": "CrPC 1973"},
                 ],
                 "bail": [
-                    {"section": "Section 437 CrPC", "description": "Bail in non-bailable offences", "act": "Code of Criminal Procedure, 1973"},
-                    {"section": "Section 439 CrPC", "description": "Special powers of High Court - bail", "act": "Code of Criminal Procedure, 1973"},
-                ],
-                "appeal": [
-                    {"section": "Section 374 CrPC", "description": "Appeals from convictions", "act": "Code of Criminal Procedure, 1973"},
-                    {"section": "Section 378 CrPC", "description": "Appeal in acquittal", "act": "Code of Criminal Procedure, 1973"},
+                    {"section": "Section 437 CrPC", "description": "Bail in non-bailable offences", "act": "CrPC 1973"},
+                    {"section": "Section 439 CrPC", "description": "High Court bail powers", "act": "CrPC 1973"},
                 ],
             },
-            "corporate": {
-                "agreement": [
-                    {"section": "Section 2(20) Companies Act", "description": "Definition of Company", "act": "Companies Act, 2013"},
-                    {"section": "Section 230 Companies Act", "description": "Compromise arrangements", "act": "Companies Act, 2013"},
-                ],
+            "civil": {
                 "petition": [
-                    {"section": "Section 241 Companies Act", "description": "Relief in cases of oppression", "act": "Companies Act, 2013"},
+                    {"section": "Section 9 CPC", "description": "Courts to try all civil suits", "act": "CPC 1908"},
+                    {"section": "Order VII Rule 11", "description": "Rejection of plaint", "act": "CPC 1908"},
                 ],
-            },
-            "family": {
-                "petition": [
-                    {"section": "Section 13 Hindu Marriage Act", "description": "Divorce", "act": "Hindu Marriage Act, 1955"},
-                    {"section": "Section 24 Hindu Marriage Act", "description": "Maintenance pendente lite", "act": "Hindu Marriage Act, 1955"},
-                    {"section": "Section 125 CrPC", "description": "Maintenance of wives, children, parents", "act": "Code of Criminal Procedure, 1973"},
-                ],
-                "divorce": [
-                    {"section": "Section 13 Hindu Marriage Act", "description": "Divorce", "act": "Hindu Marriage Act, 1955"},
-                    {"section": "Section 13B Hindu Marriage Act", "description": "Divorce by mutual consent", "act": "Hindu Marriage Act, 1955"},
-                ],
-            },
-            "labour": {
-                "petition": [
-                    {"section": "Section 2(s) Industrial Disputes Act", "description": "Definition of workman", "act": "Industrial Disputes Act, 1947"},
-                    {"section": "Section 25F Industrial Disputes Act", "description": "Conditions for retrenchment", "act": "Industrial Disputes Act, 1947"},
+                "contract": [
+                    {"section": "Section 10 Contract Act", "description": "Valid contracts", "act": "Contract Act 1872"},
+                    {"section": "Section 73 Contract Act", "description": "Compensation for breach", "act": "Contract Act 1872"},
                 ],
             },
             "constitutional": {
                 "petition": [
-                    {"section": "Article 32 Constitution", "description": "Remedies for fundamental rights", "act": "Constitution of India"},
-                    {"section": "Article 226 Constitution", "description": "Power to issue writs - High Courts", "act": "Constitution of India"},
-                    {"section": "Article 14 Constitution", "description": "Equality before law", "act": "Constitution of India"},
-                    {"section": "Article 21 Constitution", "description": "Right to life and personal liberty", "act": "Constitution of India"},
+                    {"section": "Article 32", "description": "Writ jurisdiction - Supreme Court", "act": "Constitution of India"},
+                    {"section": "Article 226", "description": "Writ jurisdiction - High Courts", "act": "Constitution of India"},
+                    {"section": "Article 21", "description": "Right to life and liberty", "act": "Constitution of India"},
+                ],
+            },
+            "family": {
+                "petition": [
+                    {"section": "Section 13 HMA", "description": "Divorce", "act": "Hindu Marriage Act 1955"},
+                    {"section": "Section 125 CrPC", "description": "Maintenance", "act": "CrPC 1973"},
                 ],
             },
         }
-
-        suggestions = []
-        if case_type in section_database:
-            doc_sections = section_database[case_type]
-            if document_type in doc_sections:
-                suggestions = doc_sections[document_type]
-            else:
-                suggestions = list(doc_sections.values())[0]
-
-        return suggestions[:10]
+        ct = db.get(case_type, {})
+        return ct.get(document_type, list(ct.values())[0] if ct else [])[:10]
 
 
-# ---------------------------------------------------------------------------
-# Singleton helpers
-# ---------------------------------------------------------------------------
-
-_legal_ai_instance = None
-
+_instance = None
 
 def get_legal_ai() -> LegalDraftingAI:
-    global _legal_ai_instance
-    if _legal_ai_instance is None:
-        _legal_ai_instance = LegalDraftingAI()
-    return _legal_ai_instance
-
+    global _instance
+    if _instance is None:
+        _instance = LegalDraftingAI()
+    return _instance
 
 class LazyLegalAI:
     def __getattr__(self, name):
         return getattr(get_legal_ai(), name)
-
 
 legal_ai = LazyLegalAI()

@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useGemini } from '../hooks/useGemini';
-import { saveDraft } from '../utils/storage';
+import api from '../utils/api';
 import ValidationModal from '../components/ValidationModal';
 import DraftAssistant from '../components/ai/DraftAssistant';
 import SectionSuggester from '../components/ai/SectionSuggester';
 
 const NewDraft = () => {
   const navigate = useNavigate();
-  const { generateLegalDraft, error: aiError } = useGemini();
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedSections, setSelectedSections] = useState([]);
@@ -122,38 +121,21 @@ const NewDraft = () => {
         : [];
       const allSections = [...selectedSections.map(s => s.section), ...manualSections];
 
-      const content = await generateLegalDraft({
-        documentType: formData.document_type,
-        caseType: formData.case_type,
-        court: formData.court || 'District Court',
-        title: formData.title,
-        facts: formData.facts,
-        parties,
-        sections: allSections,
-        reliefSought: formData.relief_sought,
-        tone: formData.tone,
-        additionalContext: formData.additional_context,
-      });
-
-      if (!content) {
-        setError(aiError || 'Failed to generate draft. Check your Gemini API key in the .env file.');
-        return;
-      }
-
-      const draft = saveDraft({
+      const requestData = {
         title: formData.title,
         document_type: formData.document_type,
         case_type: formData.case_type,
         court: formData.court || 'District Court',
-        content,
         facts: formData.facts,
         parties,
         sections: allSections,
         relief_sought: formData.relief_sought,
         tone: formData.tone,
-        citations: [],
-        status: 'draft',
-      });
+        additional_context: formData.additional_context,
+      };
+
+      const response = await api.post('/drafts/generate', requestData, { timeout: 90000 });
+      const draft = response.data;
 
       navigate(`/draft/${draft.id}`);
     } catch (err) {

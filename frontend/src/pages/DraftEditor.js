@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Save, Download, Lightbulb, BookOpen, Copy, FileDown, Check, Scale } from 'lucide-react';
 import { jsPDF } from 'jspdf';
-import { getDraft, saveDraft } from '../utils/storage';
+import api from '../utils/api';
 import { useGemini } from '../hooks/useGemini';
 import QualityScoreDashboard from '../components/QualityScoreDashboard';
 import ClientLetterGenerator from '../components/ai/ClientLetterGenerator';
@@ -28,15 +28,17 @@ const DraftEditor = () => {
   const [caseLawResults] = useState([]);
   const [showCaseLaw, setShowCaseLaw] = useState(false);
 
-  const fetchDraft = useCallback(() => {
-    const data = getDraft(id);
-    if (!data) {
+  const fetchDraft = useCallback(async () => {
+    try {
+      const response = await api.get(`/drafts/${id}`);
+      const data = response.data;
+      setDraft(data);
+      setContent(data.content || '');
+    } catch {
       navigate('/dashboard');
-      return;
+    } finally {
+      setLoading(false);
     }
-    setDraft(data);
-    setContent(data.content || '');
-    setLoading(false);
   }, [id, navigate]);
 
   useEffect(() => {
@@ -46,20 +48,30 @@ const DraftEditor = () => {
   // Auto-save with debounce — saves 2s after user stops typing
   useEffect(() => {
     if (!content || !draft) return;
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
       setAutoSaving(true);
-      saveDraft({ id, content });
-      setLastSaved(new Date());
-      setAutoSaving(false);
+      try {
+        await api.put(`/drafts/${id}`, { content });
+        setLastSaved(new Date());
+      } catch (e) {
+        console.warn('Auto-save failed:', e.message);
+      } finally {
+        setAutoSaving(false);
+      }
     }, 2000);
     return () => clearTimeout(timer);
   }, [content, draft, id]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setSaving(true);
-    saveDraft({ id, content, updated_at: new Date().toISOString() });
-    setLastSaved(new Date());
-    setSaving(false);
+    try {
+      await api.put(`/drafts/${id}`, { content });
+      setLastSaved(new Date());
+    } catch (e) {
+      console.error('Save failed:', e.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCopyToClipboard = async () => {

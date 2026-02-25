@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getDrafts, getUser, deleteDraft } from '../utils/storage';
+import api from '../utils/api';
 import Sidebar from '../components/Sidebar';
 import StatsRow from '../components/StatsRow';
 import DraftsTable from '../components/DraftsTable';
@@ -38,15 +38,31 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    setDrafts(getDrafts());
-    setUser(getUser());
-    setLoading(false);
+    const load = async () => {
+      try {
+        const [draftsRes, userRes] = await Promise.all([
+          api.get('/drafts/'),
+          api.get('/auth/me'),
+        ]);
+        setDrafts(draftsRes.data);
+        setUser(userRes.data);
+      } catch (e) {
+        console.warn('Dashboard load failed:', e.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, []);
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (!window.confirm('Delete this draft?')) return;
-    deleteDraft(id);
-    setDrafts(prev => prev.filter(d => String(d.id) !== String(id)));
+    try {
+      await api.delete(`/drafts/${id}`);
+      setDrafts(prev => prev.filter(d => String(d.id) !== String(id)));
+    } catch (e) {
+      console.error('Delete failed:', e.message);
+    }
   };
 
   const now = new Date();

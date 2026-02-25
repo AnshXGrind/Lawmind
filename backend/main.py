@@ -1,72 +1,76 @@
-"""
-LawMind Backend - Main FastAPI Application
-AI-Powered Legal Drafting Assistant
-"""
+"""LawMind Backend — Production (Replit)"""
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-import uvicorn
+import uvicorn, os, importlib, logging
 
-from app.routers import drafts, auth, documents, citations, dataset, analytics
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 from app.core.config import settings
 from app.core.database import init_db
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Initialize services on startup"""
-    print("[*] LawMind Backend Starting...")
+    logger.info("[*] LawMind starting...")
     await init_db()
-    print("[+] Database initialized")
+    logger.info("[+] Ready!")
     yield
-    print("[-] LawMind Backend Shutting Down...")
+
 
 app = FastAPI(
     title="LawMind API",
-    description="AI-Powered Legal Drafting Assistant for Indian Law",
+    description="AI-Powered Indian Legal Drafting Assistant",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
-# CORS Configuration
+# CORS — accepts all Vercel URLs automatically
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include Routers
-app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
-app.include_router(drafts.router, prefix="/api/drafts", tags=["Legal Drafts"])
-app.include_router(documents.router, prefix="/api/documents", tags=["Documents"])
-app.include_router(citations.router, prefix="/api/citations", tags=["Citations"])
-app.include_router(dataset.router, prefix="/api/dataset", tags=["Dataset Management"])
-app.include_router(analytics.router, prefix="/api/analytics", tags=["Analytics & Insights"])
+# Load routers — skip any that fail (optional features)
+_routers = [
+    ("app.routers.auth",      "/api/auth",      "Auth"),
+    ("app.routers.drafts",    "/api/drafts",    "Drafts"),
+    ("app.routers.documents", "/api/documents", "Documents"),
+    ("app.routers.citations", "/api/citations", "Citations"),
+    ("app.routers.dataset",   "/api/dataset",   "Dataset"),
+    ("app.routers.analytics", "/api/analytics", "Analytics"),
+]
+for mod_path, prefix, tag in _routers:
+    try:
+        mod = importlib.import_module(mod_path)
+        app.include_router(mod.router, prefix=prefix, tags=[tag])
+        logger.info(f"[+] Router loaded: {prefix}")
+    except Exception as e:
+        logger.warning(f"[!] Skipped {mod_path}: {e}")
+
 
 @app.get("/")
 async def root():
-    """Health check endpoint"""
-    return {
-        "status": "active",
-        "service": "LawMind API",
-        "version": "1.0.0"
-    }
+    return {"status": "active", "service": "LawMind API", "version": "1.0.0"}
+
 
 @app.get("/health")
-async def health_check():
-    """Detailed health check"""
-    return {
-        "status": "healthy",
-        "database": "connected",
-        "ai_service": "ready"
-    }
+async def health():
+    return {"status": "healthy", "service": "LawMind"}
+
+
+@app.get("/ping")
+async def ping():
+    """Lightweight keepalive for UptimeRobot"""
+    return "pong"
+
 
 if __name__ == "__main__":
-    uvicorn.run(
-        "main:app",
-        host=settings.HOST,
-        port=settings.PORT,
-        reload=settings.DEBUG
-    )
+    port = int(os.getenv("PORT", 8080))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
