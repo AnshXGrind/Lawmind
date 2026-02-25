@@ -1,269 +1,152 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+﻿import React, { useMemo } from 'react';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+// Local quality scoring — no backend required
+function computeQualityScore(content) {
+  if (!content || content.trim().length < 10) {
+    return null;
+  }
 
-function QualityScoreDashboard({ draftId }) {
-  const [qualityData, setQualityData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const text = content.toLowerCase();
+  const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
 
-  useEffect(() => {
-    const fetchQualityScore = async () => {
-      setLoading(true);
-      setError('');
+  // Structure score: checks for key legal document sections
+  const structureKeywords = ["prayer", "whereas", "petitioner", "respondent", "hon'ble", "honble", "grounds", "facts", "verification", "wherefore", "plaintiff", "defendant"];
+  const structureHits = structureKeywords.filter(k => text.includes(k)).length;
+  const structure_score = Math.min(10, 1 + (structureHits / structureKeywords.length) * 9);
 
-      try {
-        const token = localStorage.getItem('lawmind_token');
-        const response = await axios.post(
-          `${API_URL}/api/drafts/${draftId}/quality-score`,
-          {},
-          {
-            headers: { 'Authorization': `Bearer ${token}` },
-          }
-        );
+  // Legal references score: checks for IPC/CrPC/CPC section mentions
+  const legalPatterns = [/ipc/i, /crpc/i, /\bcpc\b/i, /section \d+/i, /article \d+/i, /act,? \d{4}/i, /schedule/i, /order \d+/i, /rule \d+/i];
+  const legalHits = legalPatterns.filter(p => p.test(content)).length;
+  const legal_references_score = Math.min(10, 1 + (legalHits / legalPatterns.length) * 9);
 
-        setQualityData(response.data);
-      } catch (err) {
-        // Handle error - detail can be string or array of validation errors
-        const errorDetail = err.response?.data?.detail;
-        if (Array.isArray(errorDetail)) {
-          setError(errorDetail.map(e => e.msg).join(', '));
-        } else if (typeof errorDetail === 'string') {
-          setError(errorDetail);
-        } else {
-          setError('Failed to fetch quality score');
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Completeness score: based on word count
+  let completeness_score;
+  if (wordCount >= 800) completeness_score = 9.5;
+  else if (wordCount >= 500) completeness_score = 8.0;
+  else if (wordCount >= 300) completeness_score = 6.0;
+  else if (wordCount >= 150) completeness_score = 4.0;
+  else completeness_score = 2.0;
 
-    if (draftId) {
-      fetchQualityScore();
-    }
-  }, [draftId]);
+  // Tone score: checks for formal legal language
+  const toneKeywords = ["respectfully", "humbly", "court", "jurisdiction", "pursuant", "hereinafter", "aforementioned", "notwithstanding", "wherein", "hereby"];
+  const toneHits = toneKeywords.filter(k => text.includes(k)).length;
+  const tone_score = Math.min(10, 2 + (toneHits / toneKeywords.length) * 8);
 
-  const refreshQualityScore = async () => {
-    setLoading(true);
-    setError('');
+  // Grammar score: simple heuristic (consistent casing, sentence structure)
+  const sentenceCount = (content.match(/[.!?]+/g) || []).length;
+  const avgWordsPerSentence = sentenceCount > 0 ? wordCount / sentenceCount : wordCount;
+  const grammar_score = avgWordsPerSentence > 50 ? 5.5 : avgWordsPerSentence > 20 ? 8.0 : avgWordsPerSentence > 10 ? 7.0 : 6.0;
 
-    try {
-      const token = localStorage.getItem('lawmind_token');
-      const response = await axios.post(
-        `${API_URL}/api/drafts/${draftId}/quality-score`,
-        {},
-        {
-          headers: { 'Authorization': `Bearer ${token}` },
-        }
-      );
+  const overall_score = (structure_score * 0.25 + legal_references_score * 0.25 + completeness_score * 0.2 + tone_score * 0.2 + grammar_score * 0.1);
 
-      setQualityData(response.data);
-    } catch (err) {
-      // Handle error - detail can be string or array of validation errors
-      const errorDetail = err.response?.data?.detail;
-      if (Array.isArray(errorDetail)) {
-        setError(errorDetail.map(e => e.msg).join(', '));
-      } else if (typeof errorDetail === 'string') {
-        setError(errorDetail);
-      } else {
-        setError('Failed to fetch quality score');
-      }
-    } finally {
-      setLoading(false);
-    }
+  const strengths = [];
+  const suggestions = [];
+
+  if (structure_score >= 7) strengths.push('Good document structure with key sections');
+  else suggestions.push('Add standard sections: PRAYER, GROUNDS, FACTS, VERIFICATION');
+
+  if (legal_references_score >= 7) strengths.push('Strong legal references and citations');
+  else suggestions.push('Include specific IPC/CrPC/CPC sections or Article references');
+
+  if (completeness_score >= 7) strengths.push('Comprehensive coverage of case details');
+  else suggestions.push(`Expand content — currently ${wordCount} words. Aim for 500+ for court-ready documents`);
+
+  if (tone_score >= 7) strengths.push('Formal legal language used appropriately');
+  else suggestions.push('Use more formal legal language: "respectfully", "pursuant to", "hereinafter"');
+
+  return {
+    overall_score: Math.round(overall_score * 10) / 10,
+    structure_score: Math.round(structure_score * 10) / 10,
+    legal_references_score: Math.round(legal_references_score * 10) / 10,
+    completeness_score: Math.round(completeness_score * 10) / 10,
+    tone_score: Math.round(tone_score * 10) / 10,
+    grammar_score: Math.round(grammar_score * 10) / 10,
+    strengths,
+    suggestions,
+    word_count: wordCount,
   };
+}
 
-  // Circular progress component
-  const CircularProgress = ({ score, label, color }) => {
-    const radius = 45;
-    const circumference = 2 * Math.PI * radius;
-    const offset = circumference - (score / 10) * circumference;
+function QualityScoreDashboard({ draftId, content }) {
+  const qualityData = useMemo(() => computeQualityScore(content), [content]);
 
-    return (
-      <div className="flex flex-col items-center">
-        <div className="relative w-32 h-32">
-          <svg className="transform -rotate-90 w-32 h-32">
-            <circle
-              cx="64"
-              cy="64"
-              r={radius}
-              stroke="#e5e7eb"
-              strokeWidth="8"
-              fill="transparent"
-            />
-            <circle
-              cx="64"
-              cy="64"
-              r={radius}
-              stroke={color}
-              strokeWidth="8"
-              fill="transparent"
-              strokeDasharray={circumference}
-              strokeDashoffset={offset}
-              strokeLinecap="round"
-              className="transition-all duration-1000"
-            />
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-3xl font-bold text-gray-900">
-              {score.toFixed(1)}
-            </span>
-          </div>
-        </div>
-        <span className="mt-2 text-sm font-semibold text-gray-700">{label}</span>
-      </div>
-    );
-  };
-
-  // Score badge
   const getScoreBadge = (score) => {
-    if (score >= 8) return { text: 'Excellent', color: 'bg-green-100 text-green-800', emoji: '🌟' };
-    if (score >= 6) return { text: 'Good', color: 'bg-blue-100 text-blue-800', emoji: '👍' };
-    if (score >= 4) return { text: 'Fair', color: 'bg-yellow-100 text-yellow-800', emoji: '⚠️' };
-    return { text: 'Needs Work', color: 'bg-red-100 text-red-800', emoji: '⚡' };
+    if (score >= 8) return { text: 'Excellent', color: 'bg-green-100 text-green-800', emoji: 'Star' };
+    if (score >= 6) return { text: 'Good', color: 'bg-blue-100 text-blue-800', emoji: 'Ok' };
+    if (score >= 4) return { text: 'Fair', color: 'bg-yellow-100 text-yellow-800', emoji: 'Warn' };
+    return { text: 'Needs Work', color: 'bg-red-100 text-red-800', emoji: 'Fix' };
   };
 
-  if (loading) {
+  if (!qualityData) {
     return (
       <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-        <div className="animate-spin text-4xl mb-4">🔄</div>
-        <p className="text-gray-600">Analyzing document quality...</p>
+        <p className="text-gray-500 text-sm">Start editing to see quality analysis...</p>
       </div>
     );
   }
-
-  if (error) {
-    return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-        ⚠️ {error}
-      </div>
-    );
-  }
-
-  if (!qualityData) return null;
 
   const badge = getScoreBadge(qualityData.overall_score);
 
-  return (
-    <div className="bg-white rounded-2xl shadow-lg p-8">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6 pb-4 border-b">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">📊 Quality Analysis</h2>
-          <p className="text-gray-600 text-sm">AI-powered document assessment</p>
-        </div>
-        <div className={`px-4 py-2 rounded-full ${badge.color} font-semibold`}>
-          {badge.emoji} {badge.text}
-        </div>
+  const ScoreBar = ({ score, label, color }) => (
+    <div className="mb-3">
+      <div className="flex justify-between text-xs text-gray-600 mb-1">
+        <span>{label}</span>
+        <span className="font-semibold">{score}/10</span>
       </div>
-
-      {/* Overall Score */}
-      <div className="mb-8 text-center">
-        <CircularProgress
-          score={qualityData.overall_score}
-          label="Overall Quality"
-          color={
-            qualityData.overall_score >= 8 ? '#10b981' :
-            qualityData.overall_score >= 6 ? '#3b82f6' :
-            qualityData.overall_score >= 4 ? '#f59e0b' :
-            '#ef4444'
-          }
+      <div className="w-full bg-gray-200 rounded-full h-2">
+        <div
+          className="h-2 rounded-full transition-all duration-700"
+          style={{ width: `${score * 10}%`, background: color }}
         />
       </div>
+    </div>
+  );
 
-      {/* Breakdown Scores */}
-      <div className="mb-8">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Score Breakdown</h3>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div className="text-center p-4 bg-blue-50 rounded-lg">
-            <div className="text-2xl font-bold text-blue-600">
-              {qualityData.structure_score.toFixed(1)}
-            </div>
-            <div className="text-xs text-gray-600 mt-1">Structure</div>
-          </div>
-          <div className="text-center p-4 bg-purple-50 rounded-lg">
-            <div className="text-2xl font-bold text-purple-600">
-              {qualityData.tone_score.toFixed(1)}
-            </div>
-            <div className="text-xs text-gray-600 mt-1">Tone</div>
-          </div>
-          <div className="text-center p-4 bg-green-50 rounded-lg">
-            <div className="text-2xl font-bold text-green-600">
-              {qualityData.completeness_score.toFixed(1)}
-            </div>
-            <div className="text-xs text-gray-600 mt-1">Completeness</div>
-          </div>
-          <div className="text-center p-4 bg-orange-50 rounded-lg">
-            <div className="text-2xl font-bold text-orange-600">
-              {qualityData.legal_references_score.toFixed(1)}
-            </div>
-            <div className="text-xs text-gray-600 mt-1">References</div>
-          </div>
-          <div className="text-center p-4 bg-red-50 rounded-lg">
-            <div className="text-2xl font-bold text-red-600">
-              {qualityData.grammar_score.toFixed(1)}
-            </div>
-            <div className="text-xs text-gray-600 mt-1">Grammar</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Strengths */}
-      {qualityData.strengths && qualityData.strengths.length > 0 && (
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">✅ Strengths</h3>
-          <div className="flex flex-wrap gap-2">
-            {qualityData.strengths.map((strength, index) => (
-              <span
-                key={index}
-                className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm"
-              >
-                ✓ {strength}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Suggestions */}
-      {qualityData.suggestions && qualityData.suggestions.length > 0 && (
+  return (
+    <div className="bg-white rounded-2xl shadow-lg p-6">
+      <div className="flex justify-between items-center mb-4 pb-3 border-b">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">💡 Suggestions for Improvement</h3>
-          <div className="space-y-3">
-            {qualityData.suggestions.map((suggestion, index) => (
-              <div
-                key={index}
-                className="p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg"
-              >
-                <div className="flex items-start">
-                  <span className="text-blue-600 mr-3 mt-1">💡</span>
-                  <div className="flex-1">
-                    <p className="text-gray-800">{suggestion}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <h2 className="text-xl font-bold text-gray-900">Quality Analysis</h2>
+          <p className="text-gray-500 text-xs mt-1">{qualityData.word_count} words</p>
+        </div>
+        <div className={`px-3 py-1.5 rounded-full ${badge.color} font-semibold text-sm`}>
+          {badge.text}
+        </div>
+      </div>
+
+      <div className="text-center mb-6">
+        <div className="text-5xl font-bold text-gray-900">{qualityData.overall_score}</div>
+        <div className="text-sm text-gray-500 mt-1">Overall Score / 10</div>
+      </div>
+
+      <div className="mb-5">
+        <ScoreBar score={qualityData.structure_score} label="Structure" color="#3b82f6" />
+        <ScoreBar score={qualityData.legal_references_score} label="Legal References" color="#8b5cf6" />
+        <ScoreBar score={qualityData.completeness_score} label="Completeness" color="#10b981" />
+        <ScoreBar score={qualityData.tone_score} label="Tone" color="#f59e0b" />
+        <ScoreBar score={qualityData.grammar_score} label="Grammar" color="#ef4444" />
+      </div>
+
+      {qualityData.strengths.length > 0 && (
+        <div className="mb-4">
+          <h3 className="text-sm font-semibold text-gray-700 mb-2">Strengths</h3>
+          {qualityData.strengths.map((s, i) => (
+            <div key={i} className="text-xs text-green-700 bg-green-50 rounded px-3 py-1.5 mb-1">+ {s}</div>
+          ))}
         </div>
       )}
 
-      {/* Refresh Button */}
-      <div className="mt-6 pt-4 border-t">
-        <button
-          onClick={refreshQualityScore}
-          disabled={loading}
-          className="w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors disabled:bg-gray-50"
-        >
-          {loading ? '⏳ Analyzing...' : '🔄 Refresh Analysis'}
-        </button>
-      </div>
+      {qualityData.suggestions.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-gray-700 mb-2">Suggestions</h3>
+          {qualityData.suggestions.map((s, i) => (
+            <div key={i} className="text-xs text-blue-700 bg-blue-50 rounded px-3 py-1.5 mb-1">Tip: {s}</div>
+          ))}
+        </div>
+      )}
 
-      {/* Info */}
       <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-        <p className="text-xs text-yellow-800">
-          💡 <strong>Tip:</strong> Quality scores update automatically as you edit. Aim for 8+ for court-ready documents!
-        </p>
+        <p className="text-xs text-yellow-800">Scores update automatically as you edit. Aim for 8+ for court-ready documents.</p>
       </div>
     </div>
   );

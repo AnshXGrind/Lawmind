@@ -1,8 +1,5 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 function UploadDocument() {
   const navigate = useNavigate();
@@ -44,13 +41,8 @@ function UploadDocument() {
 
   // Validate and set file
   const handleFile = (selectedFile) => {
-    const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+    const validTypes = ['text/plain', 'application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
     const maxSize = 10 * 1024 * 1024; // 10MB
-
-    if (!validTypes.includes(selectedFile.type)) {
-      setError('Invalid file type. Please upload PDF, JPEG, or PNG files only.');
-      return;
-    }
 
     if (selectedFile.size > maxSize) {
       setError('File size exceeds 10MB limit.');
@@ -61,106 +53,34 @@ function UploadDocument() {
     setError('');
   };
 
-  // Upload and extract
-  const handleUpload = async () => {
+  // Read file and redirect to analyser
+  const handleUpload = () => {
     if (!file) return;
-
     setUploading(true);
     setError('');
 
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const token = localStorage.getItem('lawmind_token');
-      const response = await axios.post(
-        `${API_URL}/api/documents/upload-and-extract`,
-        formData,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-
-      setUploadedDoc(response.data);
+    if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const text = ev.target.result;
+        sessionStorage.setItem('lawmind_analyse_text', text);
+        setUploading(false);
+        navigate('/analyse');
+      };
+      reader.onerror = () => {
+        setError('Failed to read file.');
+        setUploading(false);
+      };
+      reader.readAsText(file);
+    } else {
+      // Non-text files: show instructions to copy-paste text
       setUploading(false);
-      setProcessing(true);
-
-      // Poll for processing completion
-      pollProcessingStatus(response.data.document_id);
-
-    } catch (err) {
-      // Handle error - detail can be string or array of validation errors
-      const errorDetail = err.response?.data?.detail;
-      if (Array.isArray(errorDetail)) {
-        setError(errorDetail.map(e => e.msg).join(', '));
-      } else if (typeof errorDetail === 'string') {
-        setError(errorDetail);
-      } else {
-        setError('Upload failed. Please try again.');
-      }
-      setUploading(false);
+      setUploadedDoc({ name: file.name, type: file.type, note: 'non-text' });
     }
   };
 
-  // Poll processing status
-  const pollProcessingStatus = async (docId) => {
-    const token = localStorage.getItem('lawmind_token');
-    const maxAttempts = 30;
-    let attempts = 0;
-
-    const interval = setInterval(async () => {
-      try {
-        const response = await axios.get(
-          `${API_URL}/api/documents/uploaded/${docId}`,
-          {
-            headers: { 'Authorization': `Bearer ${token}` },
-          }
-        );
-
-        if (response.data.processing_status === 'completed') {
-          setUploadedDoc(response.data);
-          setProcessing(false);
-          clearInterval(interval);
-        } else if (response.data.processing_status === 'failed') {
-          setError('OCR processing failed. Please try another document.');
-          setProcessing(false);
-          clearInterval(interval);
-        }
-
-        attempts++;
-        if (attempts >= maxAttempts) {
-          setError('Processing timeout. Please check back later.');
-          setProcessing(false);
-          clearInterval(interval);
-        }
-      } catch (err) {
-        setError('Error checking status. Please refresh the page.');
-        setProcessing(false);
-        clearInterval(interval);
-      }
-    }, 2000); // Check every 2 seconds
-  };
-
-  // Create draft from extracted data
-  const handleCreateDraft = async () => {
-    try {
-      const token = localStorage.getItem('lawmind_token');
-      const response = await axios.post(
-        `${API_URL}/api/documents/create-draft-from-upload/${uploadedDoc.id}`,
-        {},
-        {
-          headers: { 'Authorization': `Bearer ${token}` },
-        }
-      );
-
-      // Navigate to draft editor
-      navigate(`/draft/${response.data.draft_id}`);
-    } catch (err) {
-      setError('Failed to create draft. Please try again.');
-    }
+  const handleCreateDraft = () => {
+    navigate('/analyse');
   };
 
   // Reset
@@ -211,7 +131,7 @@ function UploadDocument() {
                   <input
                     type="file"
                     onChange={handleChange}
-                    accept=".pdf,.jpg,.jpeg,.png"
+                    accept=".txt,.pdf,.jpg,.jpeg,.png"
                     className="hidden"
                     id="file-upload"
                   />
@@ -222,7 +142,7 @@ function UploadDocument() {
                     Choose File
                   </label>
                   <p className="text-sm text-gray-400 mt-4">
-                    Supported: PDF, JPEG, PNG (Max 10MB)
+                    Supported: TXT (direct), PDF/JPEG/PNG (paste text in Analyser) · Max 10MB
                   </p>
                 </>
               ) : (
@@ -279,7 +199,36 @@ function UploadDocument() {
           </div>
         )}
 
-        {/* Extracted Data Display */}
+        {/* Non-text file guidance */}
+        {uploadedDoc && uploadedDoc.note === 'non-text' && (
+          <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
+            <div className="text-center mb-6">
+              <div className="text-5xl mb-3">📋</div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">PDF / Image Uploaded</h2>
+              <p className="text-gray-600">File: <strong>{uploadedDoc.name}</strong></p>
+            </div>
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl mb-6">
+              <p className="text-yellow-800 font-medium mb-1">⚠️ OCR requires a backend service</p>
+              <p className="text-yellow-700 text-sm">This offline version cannot extract text from PDFs or images automatically. Please open your document, copy the text, and paste it in the Document Analyser.</p>
+            </div>
+            <div className="flex gap-4">
+              <button
+                onClick={() => navigate('/analyse')}
+                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+              >
+                📝 Open Document Analyser
+              </button>
+              <button
+                onClick={handleReset}
+                className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                ↩ Try Another File
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Extracted Data Display (legacy, kept for compat) */}
         {uploadedDoc && uploadedDoc.processing_status === 'completed' && (
           <div className="bg-white rounded-2xl shadow-lg p-8">
             {/* Header with confidence score */}
@@ -381,10 +330,10 @@ function UploadDocument() {
         <div className="mt-8 bg-blue-50 rounded-xl p-6 border border-blue-200">
           <h3 className="font-semibold text-blue-900 mb-2">💡 How It Works</h3>
           <ul className="text-sm text-blue-800 space-y-1">
-            <li>• Upload FIR, chargesheet, or any legal document (PDF/Image)</li>
-            <li>• Our AI extracts names, sections, FIR number, dates automatically</li>
-            <li>• Review extracted data and create a draft instantly</li>
-            <li>• Saves 30-45 minutes of manual data entry per case!</li>
+            <li>• Upload a <strong>.txt</strong> legal document — it opens instantly in the Analyser</li>
+            <li>• For PDF / image files, copy the text and paste it in Document Analyser</li>
+            <li>• The Analyser uses Gemini AI to extract case details, draft sections, and citations</li>
+            <li>• Works 100% offline — no backend required!</li>
           </ul>
         </div>
       </div>

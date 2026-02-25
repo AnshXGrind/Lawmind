@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, Download, Lightbulb, BookOpen, Copy, FileDown, Check, Scale, ExternalLink, Lock, Unlock } from 'lucide-react';
+import { Save, Download, Lightbulb, BookOpen, Copy, FileDown, Check, Scale } from 'lucide-react';
 import { jsPDF } from 'jspdf';
-import api from '../utils/api';
+import { getDraft, saveDraft } from '../utils/storage';
+import { useGemini } from '../hooks/useGemini';
 import QualityScoreDashboard from '../components/QualityScoreDashboard';
 import ClientLetterGenerator from '../components/ai/ClientLetterGenerator';
 import ToneChecker from '../components/ai/ToneChecker';
@@ -12,6 +13,7 @@ import CounterArgumentGenerator from '../components/ai/CounterArgumentGenerator'
 const DraftEditor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { ask } = useGemini();
   const [draft, setDraft] = useState(null);
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
@@ -23,67 +25,41 @@ const DraftEditor = () => {
   const [aiResult, setAiResult] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [showQuality, setShowQuality] = useState(true);
-  const [caseLawResults, setCaseLawResults] = useState([]);
-  const [caseLawLoading, setCaseLawLoading] = useState(false);
+  const [caseLawResults] = useState([]);
   const [showCaseLaw, setShowCaseLaw] = useState(false);
-  const [isEncrypted, setIsEncrypted] = useState(false);
-  const [encryptionLoading, setEncryptionLoading] = useState(false);
 
-  const fetchDraft = useCallback(async () => {
-    try {
-      const response = await api.get(`/drafts/${id}`);
-      setDraft(response.data);
-      setContent(response.data.content);
-      setIsEncrypted(response.data.is_encrypted || false);
-    } catch (err) {
-      console.error(err);
-      alert('Failed to load draft');
+  const fetchDraft = useCallback(() => {
+    const data = getDraft(id);
+    if (!data) {
       navigate('/dashboard');
-    } finally {
-      setLoading(false);
+      return;
     }
+    setDraft(data);
+    setContent(data.content || '');
+    setLoading(false);
   }, [id, navigate]);
 
   useEffect(() => {
     fetchDraft();
   }, [fetchDraft]);
 
-  // Auto-save functionality - saves every 30 seconds
+  // Auto-save with debounce — saves 2s after user stops typing
   useEffect(() => {
     if (!content || !draft) return;
-
-    const autoSaveInterval = setInterval(async () => {
+    const timer = setTimeout(() => {
       setAutoSaving(true);
-      try {
-        await api.put(`/drafts/${id}`, content, {
-          headers: { 'Content-Type': 'application/json' },
-          params: { content }
-        });
-        setLastSaved(new Date());
-      } catch (err) {
-        console.error('Auto-save failed:', err);
-      } finally {
-        setAutoSaving(false);
-      }
-    }, 30000); // 30 seconds
-
-    return () => clearInterval(autoSaveInterval);
+      saveDraft({ id, content });
+      setLastSaved(new Date());
+      setAutoSaving(false);
+    }, 2000);
+    return () => clearTimeout(timer);
   }, [content, draft, id]);
 
-  const handleSave = async () => {
+  const handleSave = () => {
     setSaving(true);
-    try {
-      await api.put(`/drafts/${id}`, content, {
-        headers: { 'Content-Type': 'application/json' },
-        params: { content }
-      });
-      setLastSaved(new Date());
-      alert('Draft saved successfully!');
-    } catch (err) {
-      alert('Failed to save draft');
-    } finally {
-      setSaving(false);
-    }
+    saveDraft({ id, content, updated_at: new Date().toISOString() });
+    setLastSaved(new Date());
+    setSaving(false);
   };
 
   const handleCopyToClipboard = async () => {
@@ -155,43 +131,27 @@ const DraftEditor = () => {
     }
   };
 
-  const handleExport = async (format) => {
-    try {
-      await api.post('/documents/export', {
-        draft_id: parseInt(id),
-        format: format,
-        include_watermark: true
-      });
-      alert(`Draft exported as ${format.toUpperCase()} successfully!`);
-    } catch (err) {
-      alert('Failed to export draft');
-    }
+  const handleExport = () => {
+    // DOCX export requires backend — download PDF instead
+    handleDownloadPDF();
   };
 
   const handleAiAction = async (action) => {
     setAiLoading(true);
     setAiResult('');
-    
-    try {
-      const response = await api.post('/drafts/edit', {
-        draft_id: parseInt(id),
-        action: action,
-        selected_text: selectedText || content,
-        context: ''
-      });
-
-      if (response.data.suggestions) {
-        setAiResult(response.data.suggestions.join('\n\n'));
-      } else {
-        setAiResult(response.data.result);
-      }
-      
-      setShowQuality(false); // Switch to AI Assistant tab
-    } catch (err) {
-      alert('AI action failed');
-    } finally {
-      setAiLoading(false);
+    const text = selectedText || content.slice(0, 800);
+    let prompt = '';
+    if (action === 'explain')    prompt = `Explain this legal text in simple, plain English (under 150 words):\n\n${text}`;
+    if (action === 'simplify')   prompt = `Rewrite this legal text in simpler language while keeping legal accuracy:\n\n${text}`;
+    if (action === 'rephrase')   prompt = `Rephrase this text in formal Indian legal language suitable for court documents:\n\n${text}`;
+    if (action === 'add_citation') prompt = `Suggest 3 relevant Indian case law citations related to this legal text. Format each as: Case Name | Citation | One-line relevance:\n\n${text}`;
+    if (action === 'improve')    prompt = `Give 5 specific improvements for this legal draft. Number each suggestion:\n\n${text}`;
+    const result = await ask(prompt);
+    if (result) {
+      setAiResult(result);
+      setShowQuality(false);
     }
+    setAiLoading(false);
   };
 
   const handleTextSelection = () => {
@@ -202,76 +162,19 @@ const DraftEditor = () => {
     }
   };
 
-  // Case Law Search
-  const searchCaseLaw = async () => {
-    setCaseLawLoading(true);
+  // Case Law Search — offline stub
+  const searchCaseLaw = () => {
     setShowCaseLaw(true);
-    try {
-      const searchQuery = `${draft?.case_type} ${draft?.sections || ''} ${content.substring(0, 200)}`;
-      const response = await api.get('/drafts/case-law/search', {
-        params: {
-          query: searchQuery,
-          max_results: 10,
-          court: draft?.court,
-          case_type: draft?.case_type
-        }
-      });
-      setCaseLawResults(response.data.cases || []);
-    } catch (err) {
-      console.error('Case law search failed:', err);
-      alert('Failed to search case law');
-    } finally {
-      setCaseLawLoading(false);
-    }
   };
 
-  const insertCitation = async (caseData) => {
-    try {
-      const citationText = `${caseData.title}, ${caseData.citation}`;
-      const response = await api.post(`/drafts/drafts/${id}/insert-citation`, null, {
-        params: {
-          citation_text: citationText,
-          position: 0
-        }
-      });
-      setContent(response.data.content);
-      alert('Citation inserted successfully!');
-    } catch (err) {
-      console.error('Failed to insert citation:', err);
-      alert('Failed to insert citation');
-    }
+  const insertCitation = (caseData) => {
+    const citationText = `\n\n[Citation: ${caseData.title}, ${caseData.citation}]`;
+    setContent(prev => prev + citationText);
   };
 
-  const toggleEncryption = async () => {
-    if (encryptionLoading) return;
-    
-    const confirmMessage = isEncrypted
-      ? 'Decrypt this draft? The content will be stored in plain text.'
-      : 'Encrypt this draft? The content will be secured with AES-256 encryption.';
-    
-    if (!window.confirm(confirmMessage)) return;
-    
-    setEncryptionLoading(true);
-    try {
-      const response = await api.post(`/drafts/drafts/${id}/toggle-encryption`, null, {
-        params: { encrypt: !isEncrypted }
-      });
-      
-      setIsEncrypted(response.data.is_encrypted);
-      
-      // If decrypted, update content
-      if (!response.data.is_encrypted && response.data.content) {
-        setContent(response.data.content);
-      }
-      
-      alert(isEncrypted ? 'Draft decrypted successfully!' : 'Draft encrypted successfully!');
-    } catch (err) {
-      console.error('Encryption toggle failed:', err);
-      const errorMsg = err.response?.data?.detail || 'Encryption operation failed';
-      alert(errorMsg);
-    } finally {
-      setEncryptionLoading(false);
-    }
+  const toggleEncryption = () => {
+    // Encryption requires backend — not available in local mode
+    alert('Encryption is not available in offline mode.');
   };
 
   if (loading) {
@@ -309,31 +212,6 @@ const DraftEditor = () => {
                   <span>Saved {new Date(lastSaved).toLocaleTimeString()}</span>
                 </div>
               )}
-
-              <button
-                onClick={toggleEncryption}
-                disabled={encryptionLoading}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition ${
-                  isEncrypted
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white hover:from-amber-600 hover:to-amber-700'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                } ${encryptionLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                title={isEncrypted ? 'Decrypt draft' : 'Encrypt draft with AES-256'}
-              >
-                {encryptionLoading ? (
-                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                ) : isEncrypted ? (
-                  <>
-                    <Lock className="w-4 h-4" />
-                    <span>Encrypted</span>
-                  </>
-                ) : (
-                  <>
-                    <Unlock className="w-4 h-4" />
-                    <span>Not Encrypted</span>
-                  </>
-                )}
-              </button>
 
               <button
                 onClick={handleCopyToClipboard}
@@ -407,16 +285,6 @@ const DraftEditor = () => {
                     <div>
                       <div className="font-medium text-sm">Download PDF</div>
                       <div className="text-xs text-gray-500">Quick export</div>
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => handleExport('docx')}
-                    className="flex items-center space-x-2 w-full text-left px-4 py-3 hover:bg-blue-50 rounded-b-lg transition border-t"
-                  >
-                    <FileDown className="w-4 h-4 text-blue-600" />
-                    <div>
-                      <div className="font-medium text-sm">Export DOCX</div>
-                      <div className="text-xs text-gray-500">Via backend</div>
                     </div>
                   </button>
                 </div>
@@ -493,7 +361,7 @@ const DraftEditor = () => {
           {/* Right Sidebar - Quality Score, AI Assistant, or Case Law */}
           <div className="lg:col-span-1">
             {showQuality ? (
-              <QualityScoreDashboard draftId={id} />
+              <QualityScoreDashboard draftId={id} content={content} />
             ) : showCaseLaw ? (
               <div className="bg-white rounded-lg shadow-md p-6 sticky top-24">
                 <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center space-x-2">
@@ -501,11 +369,7 @@ const DraftEditor = () => {
                   <span>Relevant Case Law</span>
                 </h2>
 
-                {caseLawLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
-                  </div>
-                ) : caseLawResults.length > 0 ? (
+                {caseLawResults.length > 0 ? (
                   <div className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto">
                     {caseLawResults.map((caseItem, index) => (
                       <div
@@ -547,7 +411,7 @@ const DraftEditor = () => {
                             rel="noopener noreferrer"
                             className="px-3 py-2 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium rounded border border-gray-300 transition flex items-center space-x-1"
                           >
-                            <ExternalLink className="w-3 h-3" />
+                            <span>↗</span>
                             <span>View</span>
                           </a>
                         </div>

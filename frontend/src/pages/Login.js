@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Scale, Shield, Award, Sparkles } from 'lucide-react';
-import api from '../utils/api';
+import { setUser } from '../utils/storage';
 
 const Login = ({ onLogin }) => {
   const [email, setEmail] = useState('');
@@ -10,32 +10,17 @@ const Login = ({ onLogin }) => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
-
-    try {
-      const response = await api.post('/auth/login', {
-        email,
-        password
-      });
-
-      onLogin(response.data.access_token);
-      navigate('/dashboard');
-    } catch (err) {
-      // Handle error - detail can be string or array of validation errors
-      const errorDetail = err.response?.data?.detail;
-      if (Array.isArray(errorDetail)) {
-        setError(errorDetail.map(e => e.msg).join(', '));
-      } else if (typeof errorDetail === 'string') {
-        setError(errorDetail);
-      } else {
-        setError('Login failed. Please try again.');
-      }
-    } finally {
-      setLoading(false);
-    }
+    const user = {
+      id: 'user_1',
+      email,
+      full_name: email.split('@')[0],
+      organization: '',
+    };
+    setUser(user);
+    navigate('/dashboard');
   };
 
   return (

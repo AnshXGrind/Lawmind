@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../utils/api';
+import { getDrafts, getUser, deleteDraft } from '../utils/storage';
 import Sidebar from '../components/Sidebar';
 import StatsRow from '../components/StatsRow';
 import DraftsTable from '../components/DraftsTable';
@@ -38,23 +38,15 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    Promise.all([
-      api.get('/drafts/').catch(() => ({ data: [] })),
-      api.get('/auth/me').catch(() => ({ data: null })),
-    ]).then(([draftsRes, userRes]) => {
-      setDrafts(draftsRes.data || []);
-      setUser(userRes.data);
-    }).finally(() => setLoading(false));
+    setDrafts(getDrafts());
+    setUser(getUser());
+    setLoading(false);
   }, []);
 
-  const handleDelete = async (id) => {
+  const handleDelete = (id) => {
     if (!window.confirm('Delete this draft?')) return;
-    try {
-      await api.delete(`/drafts/${id}`);
-      setDrafts((prev) => prev.filter((d) => d.id !== id));
-    } catch {
-      alert('Failed to delete draft');
-    }
+    deleteDraft(id);
+    setDrafts(prev => prev.filter(d => String(d.id) !== String(id)));
   };
 
   const now = new Date();

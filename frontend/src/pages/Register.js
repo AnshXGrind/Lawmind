@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Scale, Building2, Mail, Lock, User, CheckCircle } from 'lucide-react';
-import api from '../utils/api';
+import { setUser } from '../utils/storage';
 
 const Register = ({ onRegister }) => {
   const [formData, setFormData] = useState({
@@ -22,7 +22,7 @@ const Register = ({ onRegister }) => {
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
 
@@ -31,38 +31,14 @@ const Register = ({ onRegister }) => {
       return;
     }
 
-    setLoading(true);
-
-    try {
-      // Register user
-      await api.post('/auth/register', {
-        email: formData.email,
-        password: formData.password,
-        full_name: formData.full_name,
-        organization: formData.organization || null
-      });
-
-      // Login automatically
-      const loginResponse = await api.post('/auth/login', {
-        email: formData.email,
-        password: formData.password
-      });
-
-      onRegister(loginResponse.data.access_token);
-      navigate('/dashboard');
-    } catch (err) {
-      // Handle error - detail can be string or array of validation errors
-      const errorDetail = err.response?.data?.detail;
-      if (Array.isArray(errorDetail)) {
-        setError(errorDetail.map(e => e.msg).join(', '));
-      } else if (typeof errorDetail === 'string') {
-        setError(errorDetail);
-      } else {
-        setError('Registration failed. Please try again.');
-      }
-    } finally {
-      setLoading(false);
-    }
+    const user = {
+      id: 'user_1',
+      email: formData.email,
+      full_name: formData.full_name,
+      organization: formData.organization || '',
+    };
+    setUser(user);
+    navigate('/dashboard');
   };
 
   return (

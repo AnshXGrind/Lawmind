@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../utils/api';
+import { useGemini } from '../hooks/useGemini';
+import { saveDraft } from '../utils/storage';
 import ValidationModal from '../components/ValidationModal';
 import DraftAssistant from '../components/ai/DraftAssistant';
 import SectionSuggester from '../components/ai/SectionSuggester';
 
 const NewDraft = () => {
   const navigate = useNavigate();
+  const { generateLegalDraft, error: aiError } = useGemini();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedSections, setSelectedSections] = useState([]);
@@ -111,42 +113,51 @@ const NewDraft = () => {
     setLoading(true);
 
     try {
-      // Prepare parties object
       const parties = {};
       if (formData.petitioner) parties.petitioner = formData.petitioner;
       if (formData.respondent) parties.respondent = formData.respondent;
 
-      // Prepare sections array - combine selected sections and manual input
       const manualSections = formData.sections
         ? formData.sections.split(',').map(s => s.trim()).filter(s => s)
         : [];
       const allSections = [...selectedSections.map(s => s.section), ...manualSections];
 
-      const requestData = {
-        document_type: formData.document_type,
-        case_type: formData.case_type,
-        court: formData.court,
+      const content = await generateLegalDraft({
+        documentType: formData.document_type,
+        caseType: formData.case_type,
+        court: formData.court || 'District Court',
         title: formData.title,
         facts: formData.facts,
-        parties: parties,
+        parties,
         sections: allSections,
-        relief_sought: formData.relief_sought || null,
+        reliefSought: formData.relief_sought,
         tone: formData.tone,
-        additional_context: formData.additional_context || null
-      };
+        additionalContext: formData.additional_context,
+      });
 
-      const response = await api.post('/drafts/generate', requestData);
-      navigate(`/draft/${response.data.id}`);
-    } catch (err) {
-      // Handle error - detail can be string or array of validation errors
-      const errorDetail = err.response?.data?.detail;
-      if (Array.isArray(errorDetail)) {
-        setError(errorDetail.map(e => e.msg).join(', '));
-      } else if (typeof errorDetail === 'string') {
-        setError(errorDetail);
-      } else {
-        setError('Failed to generate draft');
+      if (!content) {
+        setError(aiError || 'Failed to generate draft. Check your Gemini API key in the .env file.');
+        return;
       }
+
+      const draft = saveDraft({
+        title: formData.title,
+        document_type: formData.document_type,
+        case_type: formData.case_type,
+        court: formData.court || 'District Court',
+        content,
+        facts: formData.facts,
+        parties,
+        sections: allSections,
+        relief_sought: formData.relief_sought,
+        tone: formData.tone,
+        citations: [],
+        status: 'draft',
+      });
+
+      navigate(`/draft/${draft.id}`);
+    } catch (err) {
+      setError('Failed to generate draft. Please try again.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -187,6 +198,14 @@ const NewDraft = () => {
       <div style={nd.inner}>
         <h1 style={nd.heading}>Create New Legal Draft</h1>
         <p style={nd.sub}>AI-powered Indian legal document generation.</p>
+
+        {!process.env.REACT_APP_GEMINI_API_KEY && (
+          <div style={{ background: '#fff3cd', border: '1px solid #ffc107', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#856404', marginBottom: 20 }}>
+            ⚠️ Gemini API key not found. Add <code>REACT_APP_GEMINI_API_KEY=your_key</code> to your <code>.env</code> file.{' '}
+            Get a free key at{' '}
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">aistudio.google.com</a>
+          </div>
+        )}
 
         {error && <div style={nd.errBox}>{error}</div>}
 
