@@ -33,19 +33,25 @@ class Settings(BaseSettings):
 
     @property
     def CORS_ORIGINS(self) -> List[str]:
+        base = [
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "http://127.0.0.1:3000",
+        ]
+        # Add explicit frontend URL if provided
+        frontend_url = os.getenv("FRONTEND_URL", "").rstrip("/")
+        if frontend_url:
+            base.append(frontend_url)
+        # Parse CORS_ORIGINS env var (JSON array or single URL)
         raw = os.getenv("CORS_ORIGINS", "")
         if raw:
             try:
                 parsed = json.loads(raw)
                 if isinstance(parsed, list):
-                    return parsed
+                    return list(dict.fromkeys(base + parsed))  # deduplicate
             except Exception:
-                return [raw.strip()]
-        return [
-            "http://localhost:3000",
-            "http://localhost:5173",
-            "http://127.0.0.1:3000",
-        ]
+                return list(dict.fromkeys(base + [raw.strip()]))
+        return base
 
     model_config = SettingsConfigDict(
         env_file=".env", case_sensitive=True, extra="ignore"

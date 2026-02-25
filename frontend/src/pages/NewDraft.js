@@ -139,7 +139,14 @@ const NewDraft = () => {
 
       navigate(`/draft/${draft.id}`);
     } catch (err) {
-      setError('Failed to generate draft. Please try again.');
+      const isTimeout = err.code === 'ECONNABORTED' || err.message?.includes('timeout');
+      const isNetwork = !err.response;
+      if (isTimeout || isNetwork) {
+        setError('⏳ Backend is still waking up on Replit. Please wait 15 seconds and try again.');
+      } else {
+        const detail = err.response?.data?.detail;
+        setError(typeof detail === 'string' ? detail : 'Draft generation failed. Check your Gemini API key in Replit Secrets.');
+      }
       console.error(err);
     } finally {
       setLoading(false);

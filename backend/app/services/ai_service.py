@@ -1,6 +1,6 @@
-"""AI Service - Google Gemini (lazy init)"""
+"""AI Service - Google Gemini (lazy init, retry, model fallback)"""
 
-import os, logging
+import os, logging, time
 from typing import List, Dict
 import google.generativeai as genai
 from app.core.config import settings
@@ -8,43 +8,89 @@ from app.models.schemas import DraftRequest
 
 logger = logging.getLogger(__name__)
 
+# Model candidates tried in order — newer API requires no 'models/' prefix
+_MODEL_CANDIDATES = [
+    "gemini-1.5-flash",
+    "gemini-1.5-flash-latest",
+    "gemini-pro",
+]
+
 _SYSTEM_PROMPT = """You are LawMind, a senior Indian legal drafting expert with 20+ years of court experience.
-Expertise: IPC, CrPC, CPC, Indian Evidence Act, Constitution, Hindu Marriage Act, Companies Act 2013, Contract Act 1872.
-ALWAYS:
-- Use proper Indian court headings (IN THE HON'BLE HIGH COURT OF...)
-- Number all paragraphs
-- Include PRAYER / RELIEF SOUGHT section
-- Add VERIFICATION clause
-- Use formal language: "It is respectfully submitted...", "The Hon'ble Court may be pleased to..."
-- Produce COMPLETE documents, not outlines."""
+Expertise: IPC, CrPC, CPC, Indian Evidence Act, Constitution, Hindu Marriage Act, Companies Act 2013, Contract Act 1872, Transfer of Property Act, Negotiable Instruments Act.
+
+FORMAT EVERY DOCUMENT WITH:
+1. CASE TITLE — IN THE HON'BLE [COURT NAME]
+2. PARTIES — Petitioner vs. Respondent block
+3. BACKGROUND / FACTS — numbered paragraphs
+4. LEGAL ARGUMENTS / GROUNDS — numbered with section citations
+5. PRAYER / RELIEF SOUGHT — numbered specific reliefs
+6. VERIFICATION CLAUSE — with blanks for date, place, deponent
+7. Advocate signature block
+
+RULES:
+- Use formal language: "It is respectfully submitted that...", "The Hon'ble Court may be pleased to..."
+- Number ALL paragraphs
+- Cite specific sections (e.g. Section 438 CrPC, Article 226 Constitution)
+- Produce COMPLETE, court-ready documents — never templates or outlines
+- Minimum 600 words"""
 
 
 class LegalDraftingAI:
     def __init__(self):
         self._model = None
+        self._working_model = None
+
+    def _configure(self):
+        key = os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY
+        if not key:
+            raise ValueError("GEMINI_API_KEY is not set. Add it to Replit Secrets.")
+        genai.configure(api_key=key)
+        return key
 
     @property
     def model(self):
         if self._model is None:
-            key = os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY
-            if not key:
-                raise ValueError("GEMINI_API_KEY is not set. Add it to Replit Secrets.")
-            genai.configure(api_key=key)
-            self._model = genai.GenerativeModel(
-                model_name="gemini-1.5-flash",
-                system_instruction=_SYSTEM_PROMPT,
-                generation_config=genai.GenerationConfig(
-                    temperature=0.2, max_output_tokens=4096
-                ),
-            )
+            self._configure()
+            last_err = None
+            for name in _MODEL_CANDIDATES:
+                try:
+                    m = genai.GenerativeModel(
+                        model_name=name,
+                        system_instruction=_SYSTEM_PROMPT,
+                        generation_config=genai.GenerationConfig(
+                            temperature=0.2, max_output_tokens=4096
+                        ),
+                    )
+                    # Probe with a cheap call
+                    m.generate_content("ping")
+                    self._model = m
+                    self._working_model = name
+                    logger.info(f"[+] Gemini model ready: {name}")
+                    break
+                except Exception as e:
+                    logger.warning(f"[!] Model {name} unavailable: {e}")
+                    last_err = e
+            if self._model is None:
+                raise ValueError(f"No Gemini model available. Last error: {last_err}")
         return self._model
 
-    def _generate(self, prompt: str) -> str:
-        try:
-            return self.model.generate_content(prompt).text
-        except Exception as e:
-            logger.error(f"Gemini error: {e}")
-            raise ValueError(f"AI generation failed: {e}")
+    def _generate(self, prompt: str, retries: int = 3) -> str:
+        """Call Gemini with exponential backoff retry."""
+        last_err = None
+        for attempt in range(retries):
+            try:
+                response = self.model.generate_content(prompt)
+                return response.text
+            except Exception as e:
+                last_err = e
+                wait = 2 ** attempt
+                logger.warning(f"Gemini attempt {attempt+1}/{retries} failed: {e} — retrying in {wait}s")
+                time.sleep(wait)
+                # Reset model on repeated failure so next attempt re-probes
+                if attempt == retries - 2:
+                    self._model = None
+        logger.error(f"Gemini failed after {retries} attempts: {last_err}")
+        raise ValueError(f"AI generation failed after {retries} retries: {last_err}")
 
     def generate_draft(self, request: DraftRequest) -> str:
         parties = "\n".join(f"{r.upper()}: {n}" for r, n in request.parties.items()) or "Parties: TBD"

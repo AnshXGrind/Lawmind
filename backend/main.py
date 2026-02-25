@@ -1,4 +1,4 @@
-"""LawMind Backend — Production (Replit)"""
+"""LawMind Backend ï¿½ Production (Replit)"""
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,7 +27,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — accepts all Vercel URLs automatically
+# CORS ï¿½ accepts all Vercel URLs automatically
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
@@ -37,7 +37,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load routers — skip any that fail (optional features)
+# Load routers ï¿½ skip any that fail (optional features)
 _routers = [
     ("app.routers.auth",      "/api/auth",      "Auth"),
     ("app.routers.drafts",    "/api/drafts",    "Drafts"),
@@ -62,7 +62,12 @@ async def root():
 
 @app.get("/health")
 async def health():
-    return {"status": "healthy", "service": "LawMind"}
+    gemini_key = os.getenv("GEMINI_API_KEY", settings.GEMINI_API_KEY)
+    return {
+        "status": "healthy",
+        "service": "LawMind",
+        "gemini": "configured" if gemini_key else "missing â€” add GEMINI_API_KEY to Replit Secrets",
+    }
 
 
 @app.get("/ping")
