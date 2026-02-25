@@ -14,71 +14,45 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Deploy to Hugging Face
+      - name: Install huggingface-hub
+        run: pip install huggingface-hub
+
+      - name: Push hf_space/ to Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           HF_USERNAME: ${{ secrets.HF_USERNAME }}
           HF_SPACE_NAME: ${{ secrets.HF_SPACE_NAME || 'lawmind-legal-ai' }}
         run: |
-          # Install huggingface-hub
-          pip install huggingface-hub
-
-          # Use Python to push to HF Spaces
           python - <<'EOF'
           import os
           from huggingface_hub import HfApi, create_repo
 
-          token = os.environ["HF_TOKEN"]
+          token    = os.environ["HF_TOKEN"]
           username = os.environ["HF_USERNAME"]
-          space_name = os.environ["HF_SPACE_NAME"]
-          repo_id = f"{username}/{space_name}"
+          space    = os.environ["HF_SPACE_NAME"]
+          repo_id  = f"{username}/{space}"
 
           api = HfApi(token=token)
 
           # Create space if it doesn't exist
-          try:
-              create_repo(repo_id, repo_type="space", space_sdk="docker", token=token, exist_ok=True)
-              print(f"✅ Space ready: {repo_id}")
-          except Exception as e:
-              print(f"⚠️ Space create: {e}")
+          create_repo(repo_id, repo_type="space", space_sdk="docker", token=token, exist_ok=True)
+          print(f"✅ Space ready: https://huggingface.co/spaces/{repo_id}")
 
-          # Upload all relevant files
-          import glob, os
-
-          files_to_upload = []
-
-          # Root files
-          for f in ["Dockerfile", "README.md", "app.py"]:
-              if os.path.exists(f):
-                  files_to_upload.append((f, f))
-
-          # Backend files
-          for root, dirs, files in os.walk("backend"):
-              # Skip __pycache__ and .env
-              dirs[:] = [d for d in dirs if d not in ["__pycache__", "data", "uploads", "exports"]]
-              for file in files:
-                  if file.endswith((".py", ".txt", ".json", ".yaml", ".yml")) and ".env" not in file:
-                      local_path = os.path.join(root, file)
-                      # Upload relative to /app (strip 'backend/' prefix)
-                      hf_path = local_path.replace("backend/", "").replace("backend\\", "")
-                      files_to_upload.append((local_path, hf_path))
-
-          for local_path, hf_path in files_to_upload:
-              try:
-                  api.upload_file(
-                      path_or_fileobj=local_path,
-                      path_in_repo=hf_path,
-                      repo_id=repo_id,
-                      repo_type="space",
-                  )
-                  print(f"  ↑ {local_path} → {hf_path}")
-              except Exception as e:
-                  print(f"  ⚠️ {local_path}: {e}")
-
-          print(f"\n✅ Deployed! https://huggingface.co/spaces/{repo_id}")
+          # Upload the entire hf_space/ directory as the Space root
+          api.upload_folder(
+              folder_path="hf_space",
+              repo_id=repo_id,
+              repo_type="space",
+              commit_message=f"Auto-deploy from GitHub Actions",
+              ignore_patterns=["__pycache__", "*.pyc", ".env", "*.db", "uploads/", "exports/"],
+          )
+          print(f"✅ Deployed! https://huggingface.co/spaces/{repo_id}")
+          print(f"🌐 API: https://{username}-{space}.hf.space")
           EOF
 
-      - name: Post deployment URL
+      - name: Summary
         run: |
-          echo "🎉 Deployed to: https://huggingface.co/spaces/${{ secrets.HF_USERNAME }}/${{ secrets.HF_SPACE_NAME || 'lawmind-legal-ai' }}"
-          echo "🌐 API URL: https://${{ secrets.HF_USERNAME }}-${{ secrets.HF_SPACE_NAME || 'lawmind-legal-ai' }}.hf.space"
+          echo "🎉 Space: https://huggingface.co/spaces/${{ secrets.HF_USERNAME }}/${{ secrets.HF_SPACE_NAME || 'lawmind-legal-ai' }}"
+          echo "🌐 API:   https://${{ secrets.HF_USERNAME }}-${{ secrets.HF_SPACE_NAME || 'lawmind-legal-ai' }}.hf.space"
+          echo "📖 Docs: https://${{ secrets.HF_USERNAME }}-${{ secrets.HF_SPACE_NAME || 'lawmind-legal-ai' }}.hf.space/docs"
+
