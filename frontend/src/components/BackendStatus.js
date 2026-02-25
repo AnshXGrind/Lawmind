@@ -47,7 +47,7 @@ export default function BackendStatus() {
 
   useEffect(() => {
     if (status === 'waking') {
-      const t = setTimeout(check, 16000); // retry after 16s (cold start ~15s)
+      const t = setTimeout(check, 35000); // retry after 35s (HF cold start ~30-60s)
       return () => clearTimeout(t);
     }
     if (status === 'online') {
@@ -57,8 +57,9 @@ export default function BackendStatus() {
   }, [status, check]);
 
   const labels = {
-    waking: `⏳ Backend is waking up on Replit — takes ~15 seconds. Retrying… (${attempts})`,
-    offline: '❌ Backend offline. Open replit.com and click ▶ Run.',
+    waking: `⏳ Backend is waking up on Hugging Face — cold start takes ~30–60 seconds. Retrying… (${attempts})`,
+    offline: '❌ Backend offline. Go to huggingface.co/spaces and restart your Space.',
+
     online: '✅ Backend connected',
   };
 

@@ -53,6 +53,11 @@ class Settings(BaseSettings):
                 return list(dict.fromkeys(base + [raw.strip()]))
         return base
 
+    @property
+    def CORS_REGEX(self) -> str:
+        """Regex pattern matching Vercel and Hugging Face preview URLs"""
+        return r"https://(.*\.vercel\.app|.*\.hf\.space|.*\.huggingface\.co)"
+
     model_config = SettingsConfigDict(
         env_file=".env", case_sensitive=True, extra="ignore"
     )

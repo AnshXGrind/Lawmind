@@ -27,11 +27,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS � accepts all Vercel URLs automatically
+# CORS — accepts all Vercel + Hugging Face URLs automatically
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
-    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_origin_regex=settings.CORS_REGEX,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -66,7 +66,8 @@ async def health():
     return {
         "status": "healthy",
         "service": "LawMind",
-        "gemini": "configured" if gemini_key else "missing — add GEMINI_API_KEY to Replit Secrets",
+        "version": "1.0.0",
+        "gemini": "configured" if gemini_key else "missing — add GEMINI_API_KEY in Space Settings → Secrets",
     }
 
 

@@ -1,0 +1,11 @@
+{
+  "title": "LawMind Legal AI",
+  "emoji": "⚖️",
+  "colorFrom": "indigo",
+  "colorTo": "purple",
+  "sdk": "docker",
+  "app_port": 7860,
+  "pinned": false,
+  "license": "mit",
+  "tags": ["legal-ai", "fastapi", "gemini", "indian-law", "huggingface"]
+}

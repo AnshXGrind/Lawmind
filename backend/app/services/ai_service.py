@@ -43,7 +43,7 @@ class LegalDraftingAI:
     def _configure(self):
         key = os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY
         if not key:
-            raise ValueError("GEMINI_API_KEY is not set. Add it to Replit Secrets.")
+            raise ValueError("GEMINI_API_KEY is not set. Add it in Space Settings → Variables and secrets.")
         genai.configure(api_key=key)
         return key
 
@@ -95,7 +95,8 @@ class LegalDraftingAI:
     def generate_draft(self, request: DraftRequest) -> str:
         parties = "\n".join(f"{r.upper()}: {n}" for r, n in request.parties.items()) or "Parties: TBD"
         sections = ", ".join(request.sections) if request.sections else "To be determined"
-        return self._generate(f"""Draft a COMPLETE, court-ready {request.document_type.value.upper()} for {request.court}.
+        try:
+            return self._generate(f"""Draft a COMPLETE, court-ready {request.document_type.value.upper()} for {request.court}.
 
 PARTIES: {parties}
 CASE TYPE: {request.case_type.value.upper()}
@@ -113,6 +114,72 @@ Generate ALL sections:
 6. PRAYER (numbered specific reliefs)
 7. VERIFICATION CLAUSE  8. Counsel signature block
 This must be ready to file in court.""")
+        except ValueError as e:
+            # If Gemini key is missing, return a mock draft so the app still works
+            if "GEMINI_API_KEY" in str(e):
+                logger.warning("Gemini key missing — returning mock draft")
+                return self._mock_draft(request)
+            raise
+
+    def _mock_draft(self, request: DraftRequest) -> str:
+        """Return a sample draft when Gemini AI is unavailable (no API key configured)."""
+        court_name = str(request.court).upper().replace("_", " ")
+        doc_type = request.document_type.value.upper().replace("_", " ")
+        return f"""IN THE HON'BLE {court_name}
+
+{doc_type}
+
+IN THE MATTER OF:
+{request.title}
+
+VERSUS
+
+[RESPONDENT NAME]                       ... RESPONDENT
+
+---
+
+PETITION UNDER ARTICLE 226 OF THE CONSTITUTION OF INDIA
+
+MOST RESPECTFULLY SHOWETH:
+
+1. That the Petitioner is filing this petition seeking appropriate relief from this Hon'ble Court.
+
+2. That the facts of the case are as follows:
+   {request.facts or "Facts to be stated here."}
+
+3. That the Petitioner has no other efficacious remedy available except to approach this Hon'ble Court.
+
+GROUNDS:
+
+4. Because the impugned action is arbitrary and violative of Article 14 of the Constitution of India.
+
+5. Because the procedure established by law has not been followed in the present case.
+
+6. Because the Petitioner's fundamental rights under Article 21 have been violated.
+
+PRAYER:
+
+In view of the aforesaid facts and circumstances, it is most respectfully prayed that this Hon'ble Court may be pleased to:
+
+(a) {request.relief_sought or "Issue appropriate writ, order, or direction"};
+(b) Award costs of this petition to the Petitioner;
+(c) Pass such other order(s) as this Hon'ble Court may deem fit and proper in the facts and circumstances of the case.
+
+---
+NOTE: This is a sample draft generated without AI. To enable AI generation, add GEMINI_API_KEY in your Hugging Face Space Settings → Variables and secrets.
+---
+
+VERIFICATION:
+I, the Petitioner above-named, do hereby verify that the contents of the above petition are true and correct to my knowledge and belief and nothing material has been concealed therefrom.
+
+Verified at [PLACE] on this [DATE].
+
+PETITIONER
+
+Through:
+[ADVOCATE NAME]
+[BAR COUNCIL NO.]
+[CONTACT]"""
 
     def explain_section(self, text: str) -> str:
         return self._generate(f"Explain this legal text in plain English (under 150 words):\n\n{text}")
