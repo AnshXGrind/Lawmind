@@ -1,13 +1,13 @@
-"""
-Hugging Face Spaces entry point.
-HF Spaces looks for app.py — this file makes the FastAPI app discoverable.
-"""
-import uvicorn
+import streamlit as st
+import requests
 
-# Import the FastAPI app from the backend
-from main import app  # noqa: F401 — re-exported for HF detection
+st.set_page_config(page_title="LawMind UI", page_icon="⚖️")
 
-if __name__ == "__main__":
-    import os
-    port = int(os.getenv("PORT", 7860))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+st.title("LawMind - AI-Powered Indian Legal Assistant")
+st.write("This Streamlit frontend connects to the LawMind backend.")
+
+# You can add your Streamlit code here to interact with the backend API
+# For example:
+# backend_url = "http://localhost:8000"
+# response = requests.get(f"{backend_url}/health")
+# st.json(response.json())

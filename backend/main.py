@@ -27,7 +27,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — accepts all Vercel + Hugging Face URLs automatically
+# CORS — accepts all domains automatically automatically
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
